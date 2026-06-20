@@ -1,9 +1,10 @@
-// ===== BACKROOMS HORROR GAME - VERSION AMÉLIORÉE =====
+// ===== BACKROOMS HORROR GAME - HARDCORE EDITION =====
+// 6 niveaux progressifs + 5 types de créatures avec IA spécifique
 
 class Game {
     constructor() {
         this.currentLevel = 0;
-        this.gameState = 'menu'; // menu, playing, paused, gameOver
+        this.gameState = 'menu';
         this.player = {
             x: 0,
             y: 0,
@@ -27,8 +28,8 @@ class Game {
         this.objects = [];
         this.keys = {};
         this.playerElement = null;
-        this.damageFlash = 0; // Pour l'effet de flash
-        this.screenShake = 0; // Pour le screen shake
+        this.damageFlash = 0;
+        this.screenShake = 0;
         
         this.init();
     }
@@ -40,25 +41,20 @@ class Game {
     }
 
     setupEventListeners() {
-        // Menu buttons
         document.getElementById('start-btn').addEventListener('click', () => this.startGame());
         document.getElementById('instructions-btn').addEventListener('click', () => this.showScreen('instructions-screen'));
         document.getElementById('back-btn').addEventListener('click', () => this.showScreen('start-screen'));
         
-        // Pause menu
         document.getElementById('resume-btn').addEventListener('click', () => this.togglePause());
         document.getElementById('restart-btn').addEventListener('click', () => this.restartGame());
         document.getElementById('quit-btn').addEventListener('click', () => this.quitToMenu());
         
-        // Game Over
         document.getElementById('retry-btn').addEventListener('click', () => this.restartGame());
         document.getElementById('main-menu-btn').addEventListener('click', () => this.quitToMenu());
 
-        // Keyboard
         window.addEventListener('keydown', (e) => this.handleKeyDown(e));
         window.addEventListener('keyup', (e) => this.handleKeyUp(e));
 
-        // Escape for pause
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.gameState === 'playing') {
                 this.togglePause();
@@ -96,39 +92,52 @@ class Game {
         const levels = [
             this.createLevelZero(),
             this.createLevelOne(),
-            this.createLevelTwo()
+            this.createLevelTwo(),
+            this.createLevelThree(),
+            this.createLevelFour(),
+            this.createLevelFive()
         ];
         
         if (levelIndex < levels.length) {
             const level = levels[levelIndex];
             this.currentLevelData = level;
-            // Copier les entités avec des propriétés d'IA améliorées
             this.entities = level.entities.map(e => ({
                 ...e,
                 vx: 0,
                 vy: 0,
-                searchRadius: 300, // Distance de détection
+                searchRadius: 300,
                 chaseSpeed: 2.5,
                 patrolSpeed: 0.8,
                 lastSeenX: null,
                 lastSeenY: null,
-                state: 'patrol', // patrol, chase, hunt
+                state: 'patrol',
                 detectionTimer: 0,
-                movementPattern: Math.random() // Pour la patrouille
+                movementPattern: Math.random(),
+                health: e.creatureHealth || 100,
+                maxHealth: e.creatureHealth || 100,
+                attackTimer: 0,
+                type: e.creatureType || 'shadow' // Type de créature
             }));
             this.objects = level.objects.map(o => ({...o}));
         }
     }
 
+    // ========== LEVEL 0: THE LOBBY ==========
     createLevelZero() {
         return {
             name: 'Level 0 - The Lobby',
-            description: 'Un couloir jaune infini. Des fluorescents qui grésillent. L\'air sent le moisi.',
+            description: 'Couloir jaune infini. Fluorescents grésillants. Début... du cauchemar.',
             backgroundColor: '#ffd700',
             difficulty: 1,
             entities: [
-                { x: 100, y: 100, type: 'entity', hostile: false, name: 'Drone' },
-                { x: 500, y: 400, type: 'entity', hostile: true, name: 'Figure sombre' }
+                { 
+                    x: 100, y: 100, type: 'entity', hostile: false, name: 'Drone neutre',
+                    creatureType: 'drone', creatureHealth: 30
+                },
+                { 
+                    x: 500, y: 400, type: 'entity', hostile: true, name: 'Shadow Walker',
+                    creatureType: 'shadow', creatureHealth: 50
+                }
             ],
             objects: [
                 { x: 600, y: 200, type: 'door', id: 'door1' },
@@ -138,16 +147,26 @@ class Game {
         };
     }
 
+    // ========== LEVEL 1: THE HABITATION BLOCK ==========
     createLevelOne() {
         return {
             name: 'Level 1 - The Habitation Block',
-            description: 'Appartements abandonnés. Silence oppressant. Des bruits de pas résonnent.',
+            description: 'Appartements morts. Silence assourdissant. Présences invisibles.',
             backgroundColor: '#8b7355',
             difficulty: 2,
             entities: [
-                { x: 200, y: 150, type: 'entity', hostile: false, name: 'Entité neutre' },
-                { x: 600, y: 300, type: 'entity', hostile: true, name: 'Guetteur' },
-                { x: 400, y: 500, type: 'entity', hostile: true, name: 'Créature sans forme' }
+                { 
+                    x: 200, y: 150, type: 'entity', hostile: false, name: 'Entité neutre',
+                    creatureType: 'drone', creatureHealth: 30
+                },
+                { 
+                    x: 600, y: 300, type: 'entity', hostile: true, name: 'Watcher',
+                    creatureType: 'watcher', creatureHealth: 60
+                },
+                { 
+                    x: 400, y: 500, type: 'entity', hostile: true, name: 'Shadow Crawler',
+                    creatureType: 'crawler', creatureHealth: 40
+                }
             ],
             objects: [
                 { x: 700, y: 200, type: 'door', id: 'door2' },
@@ -157,20 +176,148 @@ class Game {
         };
     }
 
+    // ========== LEVEL 2: THE PIPES ==========
     createLevelTwo() {
         return {
             name: 'Level 2 - The Pipes',
-            description: 'Tuyauterie géante. Humidité intense. Eau qui s\'écoule. Bruits métalliques.',
+            description: 'Tuyauterie géante. Eau stagnante. Échos distordus. Respirations synthétiques.',
             backgroundColor: '#4a4a4a',
             difficulty: 3,
             entities: [
-                { x: 300, y: 200, type: 'entity', hostile: true, name: 'Guetteur Aquatique' },
-                { x: 500, y: 400, type: 'entity', hostile: true, name: 'Créature des profondeurs' },
-                { x: 200, y: 550, type: 'entity', hostile: true, name: 'Mutant de niveau 2' }
+                { 
+                    x: 300, y: 200, type: 'entity', hostile: true, name: 'Water Watcher',
+                    creatureType: 'watcher', creatureHealth: 70
+                },
+                { 
+                    x: 500, y: 400, type: 'entity', hostile: true, name: 'Crawler Swarm 1',
+                    creatureType: 'crawler', creatureHealth: 45
+                },
+                { 
+                    x: 200, y: 550, type: 'entity', hostile: true, name: 'Crawler Swarm 2',
+                    creatureType: 'crawler', creatureHealth: 45
+                }
             ],
             objects: [
-                { x: 800, y: 300, type: 'door', id: 'door3', special: 'exit' },
+                { x: 800, y: 300, type: 'door', id: 'door3' },
                 { x: 100, y: 200, type: 'item', id: 'almond_water', name: 'Eau d\'amande' }
+            ]
+        };
+    }
+
+    // ========== LEVEL 3: THE MIRRORS ==========
+    createLevelThree() {
+        return {
+            name: 'Level 3 - The Mirrors',
+            description: 'Salles miroirs infinies. Reflets qui bougent seuls. Ce n\'est pas ton reflet.',
+            backgroundColor: '#1a1a2e',
+            difficulty: 4,
+            entities: [
+                { 
+                    x: 300, y: 200, type: 'entity', hostile: true, name: 'Reflection 1',
+                    creatureType: 'reflector', creatureHealth: 80
+                },
+                { 
+                    x: 700, y: 400, type: 'entity', hostile: true, name: 'Shadow Master',
+                    creatureType: 'shadow', creatureHealth: 65
+                },
+                { 
+                    x: 400, y: 600, type: 'entity', hostile: true, name: 'Crawler Horde 1',
+                    creatureType: 'crawler', creatureHealth: 50
+                },
+                { 
+                    x: 600, y: 150, type: 'entity', hostile: true, name: 'Crawler Horde 2',
+                    creatureType: 'crawler', creatureHealth: 50
+                }
+            ],
+            objects: [
+                { x: 750, y: 500, type: 'door', id: 'door4' },
+                { x: 150, y: 300, type: 'item', id: 'battery', name: 'Pile' }
+            ]
+        };
+    }
+
+    // ========== LEVEL 4: THE FACTORY ==========
+    createLevelFour() {
+        return {
+            name: 'Level 4 - The Factory',
+            description: 'Usine monstrueuse. Machines qui tournent sans fin. Sens de la présence.',
+            backgroundColor: '#2d2d44',
+            difficulty: 5,
+            entities: [
+                { 
+                    x: 400, y: 300, type: 'entity', hostile: true, name: 'Machine Entity',
+                    creatureType: 'machine', creatureHealth: 100
+                },
+                { 
+                    x: 200, y: 100, type: 'entity', hostile: true, name: 'Shadow Guard',
+                    creatureType: 'shadow', creatureHealth: 70
+                },
+                { 
+                    x: 800, y: 200, type: 'entity', hostile: true, name: 'Shadow Guard 2',
+                    creatureType: 'shadow', creatureHealth: 70
+                },
+                { 
+                    x: 300, y: 500, type: 'entity', hostile: true, name: 'Crawler Army 1',
+                    creatureType: 'crawler', creatureHealth: 50
+                },
+                { 
+                    x: 700, y: 550, type: 'entity', hostile: true, name: 'Crawler Army 2',
+                    creatureType: 'crawler', creatureHealth: 50
+                },
+                { 
+                    x: 500, y: 700, type: 'entity', hostile: true, name: 'Watcher Prime',
+                    creatureType: 'watcher', creatureHealth: 80
+                }
+            ],
+            objects: [
+                { x: 900, y: 400, type: 'door', id: 'door5' },
+                { x: 100, y: 400, type: 'item', id: 'almond_water', name: 'Eau d\'amande' },
+                { x: 500, y: 150, type: 'item', id: 'battery', name: 'Pile' }
+            ]
+        };
+    }
+
+    // ========== LEVEL 5: THE DEEP ==========
+    createLevelFive() {
+        return {
+            name: 'Level 5 - The Deep',
+            description: 'Les profondeurs du vide. Tout ce qui respire ici est hostile. Dernière chance.',
+            backgroundColor: '#0a0a0f',
+            difficulty: 6,
+            entities: [
+                { 
+                    x: 400, y: 200, type: 'entity', hostile: true, name: 'Reflection Master',
+                    creatureType: 'reflector', creatureHealth: 120
+                },
+                { 
+                    x: 200, y: 400, type: 'entity', hostile: true, name: 'Machine Hunter',
+                    creatureType: 'machine', creatureHealth: 110
+                },
+                { 
+                    x: 800, y: 300, type: 'entity', hostile: true, name: 'Watcher Apex',
+                    creatureType: 'watcher', creatureHealth: 100
+                },
+                { 
+                    x: 100, y: 600, type: 'entity', hostile: true, name: 'Shadow King',
+                    creatureType: 'shadow', creatureHealth: 95
+                },
+                { 
+                    x: 300, y: 500, type: 'entity', hostile: true, name: 'Crawler Void 1',
+                    creatureType: 'crawler', creatureHealth: 55
+                },
+                { 
+                    x: 700, y: 550, type: 'entity', hostile: true, name: 'Crawler Void 2',
+                    creatureType: 'crawler', creatureHealth: 55
+                },
+                { 
+                    x: 500, y: 700, type: 'entity', hostile: true, name: 'Crawler Void 3',
+                    creatureType: 'crawler', creatureHealth: 55
+                }
+            ],
+            objects: [
+                { x: 600, y: 200, type: 'door', id: 'door6', special: 'exit' },
+                { x: 200, y: 200, type: 'item', id: 'almond_water', name: 'Eau d\'amande' },
+                { x: 800, y: 700, type: 'item', id: 'almond_water', name: 'Eau d\'amande' }
             ]
         };
     }
@@ -198,7 +345,6 @@ class Game {
     }
 
     interact() {
-        // Interagir avec les objets à proximité
         const interactRadius = 50;
         const nearbyObject = this.objects.find(obj => 
             this.distance(this.player, obj) < interactRadius
@@ -229,17 +375,18 @@ class Game {
     }
 
     enterDoor(door) {
-        if (this.currentLevel < 2) {
+        if (this.currentLevel < 5) {
             this.currentLevel++;
             this.loadLevel(this.currentLevel);
             this.player.x = this.viewport.width / 2;
             this.player.y = this.viewport.height / 2;
             
-            // Légère régénération mais pas complète
-            this.player.health = Math.min(this.player.health + 30, this.player.maxHealth);
-            this.player.energy = Math.min(this.player.energy + 30, this.player.maxEnergy);
+            // Régénération diminue avec les niveaux
+            const regenFactor = 1 - (this.currentLevel * 0.1);
+            this.player.health = Math.min(this.player.health + (30 * regenFactor), this.player.maxHealth);
+            this.player.energy = Math.min(this.player.energy + (30 * regenFactor), this.player.maxEnergy);
             
-            this.showMessage(`Vous entrez dans ${this.currentLevelData.name}`, 'warning');
+            this.showMessage(`⚠️ ${this.currentLevelData.name}\nDifficulté: ${this.currentLevelData.difficulty}/6`, 'warning');
         } else if (door.special === 'exit') {
             this.endGame(true);
         }
@@ -253,14 +400,14 @@ class Game {
             case 'water':
             case 'almond_water':
                 this.player.health = Math.min(this.player.health + 30, this.player.maxHealth);
-                this.showMessage('Vous buvez l\'eau. Vous vous sentez mieux.', 'warning');
+                this.showMessage('Vous buvez l\'eau. Légèrement rassurant.', 'warning');
                 this.player.inventory.pop();
                 break;
             case 'flashlight':
-                this.showMessage('Lampe torche obtenue. Éclairage amélioré.', 'warning');
+                this.showMessage('Lampe torche obtenue.', 'warning');
                 break;
             case 'radio':
-                this.showMessage('Radio obtenue. Vous entendez du bruit blanc...', 'warning');
+                this.showMessage('Radio obtenue. Bruit blanc apaisant.', 'warning');
                 break;
             case 'battery':
                 this.player.energy = Math.min(this.player.energy + 20, this.player.maxEnergy);
@@ -284,7 +431,7 @@ class Game {
         setTimeout(() => {
             messageBox.textContent = '';
             messageBox.className = 'message-box';
-        }, 3000);
+        }, 4000);
     }
 
     updateInventoryDisplay() {
@@ -311,96 +458,220 @@ class Game {
     useItem(index) {
         const item = this.player.inventory[index];
         if (item) {
-            this.pickupItem(item); // Simule utilisation
+            this.pickupItem(item);
         }
     }
 
-    // ========== IA AMÉLIORÉE DES ENTITÉS ==========
+    // ========== IA SPÉCIFIQUE POUR CHAQUE TYPE DE CRÉATURE ==========
     updateEntities() {
         this.entities.forEach(entity => {
             const distToPlayer = this.distance(this.player, entity);
+            const creatureType = entity.creatureType || 'shadow';
             
             if (entity.hostile) {
-                // Vérifier si le joueur est visible
-                const canSee = distToPlayer < entity.searchRadius;
-                
-                // Changer l'état de l'entité
-                if (canSee && distToPlayer < 250) {
-                    entity.state = 'chase';
-                    entity.lastSeenX = this.player.x;
-                    entity.lastSeenY = this.player.y;
-                } else if (entity.lastSeenX !== null && distToPlayer > 350) {
-                    entity.state = 'hunt'; // Cherche le joueur dernièrement vu
-                } else if (!canSee) {
-                    entity.state = 'patrol';
-                }
-
-                // === COMPORTEMENT: CHASE ===
-                if (entity.state === 'chase') {
-                    const dx = this.player.x - entity.x;
-                    const dy = this.player.y - entity.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                // ========== SHADOW: Rapide, imprévisible, fuche si vu ==========
+                if (creatureType === 'shadow') {
+                    const canSee = distToPlayer < entity.searchRadius;
                     
-                    if (distance > 30) { // S'arrête pas trop près
-                        const speed = entity.chaseSpeed * (this.currentLevelData.difficulty || 1);
-                        entity.x += (dx / distance) * speed;
-                        entity.y += (dy / distance) * speed;
-                        
-                        // Plus elle chasse, plus elle est intelligente
-                        if (Math.random() < 0.05) {
-                            // Prédiction - essaie d'anticiper les mouvements
-                            const playerVelX = (this.keys['arrowright'] || this.keys['d']) ? 5 : 
-                                              (this.keys['arrowleft'] || this.keys['a']) ? -5 : 0;
-                            const playerVelY = (this.keys['arrowdown'] || this.keys['s']) ? 5 : 
-                                              (this.keys['arrowup'] || this.keys['w']) ? -5 : 0;
-                            
-                            entity.x += playerVelX * 0.3;
-                            entity.y += playerVelY * 0.3;
-                        }
-                    }
-                }
-
-                // === COMPORTEMENT: HUNT ===
-                else if (entity.state === 'hunt' && entity.lastSeenX !== null) {
-                    const dx = entity.lastSeenX - entity.x;
-                    const dy = entity.lastSeenY - entity.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance > 10) {
-                        const speed = entity.chaseSpeed * 0.6;
-                        entity.x += (dx / distance) * speed;
-                        entity.y += (dy / distance) * speed;
-                    } else {
-                        // Arrivée au dernier emplacement connu, reprendre la patrouille
+                    if (canSee && distToPlayer < 250) {
+                        entity.state = 'chase';
+                        entity.lastSeenX = this.player.x;
+                        entity.lastSeenY = this.player.y;
+                    } else if (entity.lastSeenX !== null && distToPlayer > 350) {
+                        entity.state = 'hunt';
+                    } else if (!canSee) {
                         entity.state = 'patrol';
-                        entity.lastSeenX = null;
-                        entity.lastSeenY = null;
+                    }
+
+                    if (entity.state === 'chase') {
+                        const dx = this.player.x - entity.x;
+                        const dy = this.player.y - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 30) {
+                            const speed = entity.chaseSpeed * 1.3 * (this.currentLevelData.difficulty || 1);
+                            entity.x += (dx / distance) * speed;
+                            entity.y += (dy / distance) * speed;
+                        }
+                    } else if (entity.state === 'hunt' && entity.lastSeenX !== null) {
+                        const dx = entity.lastSeenX - entity.x;
+                        const dy = entity.lastSeenY - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 10) {
+                            const speed = entity.chaseSpeed * 0.8;
+                            entity.x += (dx / distance) * speed;
+                            entity.y += (dy / distance) * speed;
+                        } else {
+                            entity.state = 'patrol';
+                            entity.lastSeenX = null;
+                            entity.lastSeenY = null;
+                        }
+                    } else if (entity.state === 'patrol') {
+                        entity.detectionTimer++;
+                        if (entity.detectionTimer > 60) {
+                            entity.movementPattern = Math.random();
+                            entity.detectionTimer = 0;
+                        }
+                        entity.x += Math.sin(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed * 1.2;
+                        entity.y += Math.cos(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed * 1.2;
                     }
                 }
 
-                // === COMPORTEMENT: PATROL ===
-                else if (entity.state === 'patrol') {
-                    // Patrouille plus intelligente
-                    entity.detectionTimer++;
+                // ========== WATCHER: Vue à grande distance, lent mais inexorable ==========
+                else if (creatureType === 'watcher') {
+                    const detectionRange = 450; // Vue plus longue
+                    const canSee = distToPlayer < detectionRange;
                     
-                    if (entity.detectionTimer > 60) {
-                        entity.movementPattern = Math.random();
-                        entity.detectionTimer = 0;
+                    if (canSee) {
+                        entity.state = 'chase';
+                        entity.lastSeenX = this.player.x;
+                        entity.lastSeenY = this.player.y;
+                    } else if (entity.lastSeenX !== null) {
+                        entity.state = 'hunt';
+                    } else {
+                        entity.state = 'patrol';
                     }
-                    
-                    // Mouvement sinusoïdal pour plus de réalisme
-                    entity.x += Math.sin(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed;
-                    entity.y += Math.cos(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed;
+
+                    if (entity.state === 'chase') {
+                        const dx = this.player.x - entity.x;
+                        const dy = this.player.y - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 50) {
+                            const speed = entity.chaseSpeed * 0.7 * (this.currentLevelData.difficulty || 1);
+                            entity.x += (dx / distance) * speed;
+                            entity.y += (dy / distance) * speed;
+                        }
+                    } else if (entity.state === 'hunt') {
+                        const dx = entity.lastSeenX - entity.x;
+                        const dy = entity.lastSeenY - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 10) {
+                            const speed = entity.chaseSpeed * 0.5;
+                            entity.x += (dx / distance) * speed;
+                            entity.y += (dy / distance) * speed;
+                        } else {
+                            entity.state = 'patrol';
+                            entity.lastSeenX = null;
+                            entity.lastSeenY = null;
+                        }
+                    } else {
+                        entity.detectionTimer++;
+                        if (entity.detectionTimer > 120) {
+                            entity.movementPattern = Math.random();
+                            entity.detectionTimer = 0;
+                        }
+                        entity.x += Math.sin(entity.detectionTimer * 0.02) * entity.patrolSpeed * 0.5;
+                        entity.y += Math.cos(entity.detectionTimer * 0.02) * entity.patrolSpeed * 0.5;
+                    }
                 }
 
-            } else {
-                // === ENTITÉS AMICALES: PATROUILLE NEUTRE ===
-                if (Math.random() < 0.02) {
-                    entity.vx = (Math.random() - 0.5) * 2;
-                    entity.vy = (Math.random() - 0.5) * 2;
+                // ========== CRAWLER: Petit, rapide, aime les groupes ==========
+                else if (creatureType === 'crawler') {
+                    const canSee = distToPlayer < 200; // Vue courte
+                    
+                    if (canSee) {
+                        entity.state = 'chase';
+                    } else {
+                        entity.state = 'patrol';
+                    }
+
+                    if (entity.state === 'chase') {
+                        const dx = this.player.x - entity.x;
+                        const dy = this.player.y - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 15) {
+                            const speed = entity.chaseSpeed * 1.5 * (this.currentLevelData.difficulty || 1);
+                            entity.x += (dx / distance) * speed;
+                            entity.y += (dy / distance) * speed;
+                        }
+                        
+                        // Les crawlers font du bruit et attirent d'autres crawlers
+                        this.entities.forEach(other => {
+                            if (other.creatureType === 'crawler' && other !== entity) {
+                                const dist = this.distance(entity, other);
+                                if (dist < 150) {
+                                    other.state = 'chase';
+                                    other.lastSeenX = this.player.x;
+                                    other.lastSeenY = this.player.y;
+                                }
+                            }
+                        });
+                    } else {
+                        entity.detectionTimer++;
+                        entity.x += (Math.random() - 0.5) * 2;
+                        entity.y += (Math.random() - 0.5) * 2;
+                    }
                 }
-                entity.x += (entity.vx || 0);
-                entity.y += (entity.vy || 0);
+
+                // ========== REFLECTOR: Copie les mouvements du joueur ==========
+                else if (creatureType === 'reflector') {
+                    const canSee = distToPlayer < 500; // Vue très longue
+                    
+                    if (canSee) {
+                        entity.state = 'chase';
+                        
+                        // Copie la position du joueur avec décalage
+                        const dx = this.player.x - entity.x;
+                        const dy = this.player.y - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 20) {
+                            const speed = entity.chaseSpeed * 1.2 * (this.currentLevelData.difficulty || 1);
+                            entity.x += (dx / distance) * speed;
+                            entity.y += (dy / distance) * speed;
+                        } else {
+                            // TRÈS proche = elle te "copie" = danger extrême
+                            this.takeDamage(20);
+                        }
+                    } else {
+                        entity.state = 'patrol';
+                        entity.x += Math.sin(entity.detectionTimer * 0.03) * entity.patrolSpeed;
+                        entity.y += Math.cos(entity.detectionTimer * 0.03) * entity.patrolSpeed;
+                        entity.detectionTimer++;
+                    }
+                }
+
+                // ========== MACHINE: Stationnaire mais avec zone de danger ==========
+                else if (creatureType === 'machine') {
+                    const detectionRange = 350;
+                    const canSee = distToPlayer < detectionRange;
+                    
+                    if (canSee) {
+                        entity.state = 'chase';
+                        entity.attackTimer++;
+                        
+                        // La machine tire des projectiles invisibles (inflict dégâts)
+                        if (entity.attackTimer % 30 === 0) {
+                            this.takeDamage(8);
+                            this.screenShake = 10;
+                        }
+                        
+                        // Mouvement rotatif autour de sa position
+                        const centerX = entity.x;
+                        const centerY = entity.y;
+                        const angle = entity.attackTimer * 0.05;
+                        const radius = 100;
+                        entity.x = centerX + Math.cos(angle) * radius;
+                        entity.y = centerY + Math.sin(angle) * radius;
+                    } else {
+                        entity.state = 'patrol';
+                        entity.attackTimer = 0;
+                    }
+                }
+
+                // ========== DRONE: Entité neutre, ne fait rien ==========
+                else if (creatureType === 'drone') {
+                    if (Math.random() < 0.02) {
+                        entity.vx = (Math.random() - 0.5) * 2;
+                        entity.vy = (Math.random() - 0.5) * 2;
+                    }
+                    entity.x += (entity.vx || 0);
+                    entity.y += (entity.vy || 0);
+                }
             }
 
             // Limites du viewport
@@ -410,7 +681,6 @@ class Game {
     }
 
     updateStats() {
-        // Dégénération naturelle
         this.player.energy -= 0.1;
         this.player.sanity -= 0.05;
         
@@ -423,49 +693,57 @@ class Game {
         this.entities.forEach(entity => {
             if (entity.hostile) {
                 const dist = this.distance(this.player, entity);
+                const creatureType = entity.creatureType || 'shadow';
                 
-                // Peur: plus proche = plus de perte de sanité
-                if (dist < 200) {
-                    const fearFactor = 1 - (dist / 200);
+                // Peur basée sur le type
+                let fearRange = 200;
+                if (creatureType === 'watcher') fearRange = 300;
+                if (creatureType === 'reflector') fearRange = 350;
+                if (creatureType === 'machine') fearRange = 250;
+                
+                if (dist < fearRange) {
+                    const fearFactor = 1 - (dist / fearRange);
                     this.player.sanity -= 0.2 * fearFactor;
                 }
                 
-                // Dégâts: très proche = dégâts
+                // Dégâts au contact
                 if (dist < 50) {
                     const now = Date.now();
-                    if (now - this.player.lastDamageTime > 500) { // Délai entre les dégâts
-                        this.takeDamage(15);
+                    if (now - this.player.lastDamageTime > 500) {
+                        let damageAmount = 15;
+                        if (creatureType === 'reflector') damageAmount = 25;
+                        if (creatureType === 'machine') damageAmount = 12;
+                        if (creatureType === 'crawler') damageAmount = 8;
+                        
+                        this.takeDamage(damageAmount);
                         this.player.lastDamageTime = now;
                     }
                 }
             }
         });
 
-        // Limite les stats
         this.player.health = Math.max(0, Math.min(this.player.health, this.player.maxHealth));
         this.player.energy = Math.max(0, Math.min(this.player.energy, this.player.maxEnergy));
         this.player.sanity = Math.max(0, Math.min(this.player.sanity, this.player.maxSanity));
 
         if (this.player.health <= 0) {
-            this.endGame(false, 'Vous avez été attrapé...');
+            this.endGame(false, 'Vous avez été déchiqueté...');
         }
         if (this.player.sanity <= 0) {
-            this.endGame(false, 'Votre esprit a cédé à la folie des Backrooms...');
+            this.endGame(false, 'Votre esprit a crié dans le vide des Backrooms...');
         }
     }
 
-    // ========== FEEDBACK VISUEL ==========
     takeDamage(amount) {
         this.player.health -= amount;
-        this.damageFlash = 0.8; // Intensité du flash (0-1)
-        this.screenShake = 15; // Force du tremblement
+        this.damageFlash = 0.8;
+        this.screenShake = 15;
         
-        // Animation du bar de santé
         const healthBar = document.getElementById('health-bar');
         healthBar.classList.add('damage-pulse');
         setTimeout(() => healthBar.classList.remove('damage-pulse'), 300);
         
-        this.showMessage('💥 VOUS AVEZ PRIS DES DÉGÂTS!', 'danger');
+        this.showMessage('💥 DÉGÂTS! ' + amount + ' HP perdus!', 'danger');
     }
 
     updateHUD() {
@@ -478,14 +756,12 @@ class Game {
         document.getElementById('sanity-bar').style.width = (this.player.sanity / this.player.maxSanity * 100) + '%';
         document.getElementById('sanity-text').textContent = Math.floor(this.player.sanity) + '/' + this.player.maxSanity;
 
-        // Danger visuel si sanité basse
         if (this.player.sanity < 30) {
             document.getElementById('sanity-bar').parentElement.style.animation = 'shake 0.3s infinite';
         } else {
             document.getElementById('sanity-bar').parentElement.style.animation = 'none';
         }
 
-        // Santé critique
         if (this.player.health < 30) {
             document.getElementById('health-bar').classList.add('danger');
         } else {
@@ -503,7 +779,6 @@ class Game {
         if (this.keys['arrowleft'] || this.keys['a']) this.player.x -= speed;
         if (this.keys['arrowright'] || this.keys['d']) this.player.x += speed;
 
-        // Limites du viewport
         this.player.x = Math.max(20, Math.min(this.player.x, this.viewport.width - 20));
         this.player.y = Math.max(20, Math.min(this.player.y, this.viewport.height - 20));
 
@@ -516,10 +791,8 @@ class Game {
     render() {
         const viewport = document.getElementById('viewport');
         
-        // === EFFETS VISUELS DE FEEDBACK ===
         let filters = [];
 
-        // 1. Flash de dégâts (blanc/rouge)
         if (this.damageFlash > 0) {
             const flashColor = this.damageFlash > 0.5 ? '#ff0000' : '#ff6666';
             viewport.style.backgroundColor = flashColor;
@@ -530,7 +803,6 @@ class Game {
             viewport.style.backgroundColor = this.currentLevelData.backgroundColor + '30';
         }
 
-        // 2. Screen Shake (tremblements de caméra)
         if (this.screenShake > 0) {
             const shakeX = (Math.random() - 0.5) * this.screenShake;
             const shakeY = (Math.random() - 0.5) * this.screenShake;
@@ -540,19 +812,16 @@ class Game {
             viewport.style.transform = 'none';
         }
 
-        // 3. Effets de sanité basse
         if (this.player.sanity < 50) {
             const distortion = (50 - this.player.sanity) / 50;
             filters.push(`grayscale(${distortion * 50}%)`);
             filters.push(`brightness(${1 - distortion * 0.15})`);
             
-            // Vignette d'horreur
             if (this.player.sanity < 30) {
                 filters.push(`drop-shadow(0 0 40px rgba(255, 0, 0, ${distortion * 0.3}))`);
             }
         }
 
-        // 4. Vignette d'avertissement selon la santé
         if (this.player.health < 40) {
             const healthFactor = 1 - (this.player.health / 40);
             viewport.style.boxShadow = `inset 0 0 60px rgba(255, 0, 0, ${healthFactor * 0.4})`;
@@ -569,7 +838,6 @@ class Game {
             viewport.style.filter = 'none';
         }
 
-        // Créer ou récupérer l'élément du joueur
         if (!this.playerElement) {
             this.playerElement = document.createElement('div');
             this.playerElement.id = 'player';
@@ -577,33 +845,28 @@ class Game {
             viewport.appendChild(this.playerElement);
         }
         
-        // Mettre à jour la position du joueur
         this.playerElement.style.left = (this.player.x - 15) + 'px';
         this.playerElement.style.top = (this.player.y - 15) + 'px';
 
-        // Afficher les entités
         const existingEntities = viewport.querySelectorAll('.entity');
         existingEntities.forEach(el => el.remove());
         
         this.entities.forEach((entity, index) => {
             const el = document.createElement('div');
-            const isHostile = entity.hostile;
-            const state = entity.state || 'neutral';
+            const creatureType = entity.creatureType || 'shadow';
             
-            el.className = 'entity' + (isHostile ? ' hostile' : ' friendly');
+            el.className = 'entity ' + creatureType;
             
-            // Ajouter une classe pour l'état de l'IA
-            if (isHostile) {
-                el.classList.add(state); // patrol, chase, hunt
+            if (entity.hostile) {
+                el.classList.add(entity.state);
             }
             
             el.style.left = entity.x - 20 + 'px';
             el.style.top = entity.y - 20 + 'px';
-            el.title = entity.name + (isHostile ? ` [${state}]` : '');
+            el.title = entity.name + ` [${creatureType}]`;
             viewport.appendChild(el);
         });
 
-        // Afficher les objets
         const existingObjects = viewport.querySelectorAll('.door, .item');
         existingObjects.forEach(el => el.remove());
 
@@ -650,11 +913,11 @@ class Game {
         if (won) {
             title.textContent = '🎉 VOUS AVEZ SURVÉCU! 🎉';
             title.style.color = '#00ff00';
-            msg.textContent = 'Vous avez échappé aux Backrooms et retrouvé la réalité... pour combien de temps?';
+            msg.textContent = `Vous avez traversé les ${this.currentLevel + 1} niveaux et échappé aux Backrooms!\nMais... pour combien de temps?`;
         } else {
             title.textContent = '💀 GAME OVER 💀';
             title.style.color = '#ff0000';
-            msg.textContent = message || 'Vous avez échoué à échapper aux Backrooms...';
+            msg.textContent = message || 'Vous avez échoué...';
         }
         
         this.showScreen('game-over-screen');
@@ -681,7 +944,6 @@ class Game {
     }
 }
 
-// Démarrer le jeu au chargement
 window.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
 });
