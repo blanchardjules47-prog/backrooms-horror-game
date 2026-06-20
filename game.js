@@ -26,7 +26,7 @@ class Game {
         this.entities = [];
         this.objects = [];
         this.keys = {};
-        this.playerElement = null;
+        thvois-tu, j'ai ouvert le site en entier, car je ne trouve pas le en-game.Wachu musarutsit or notis.playerElement = null;
         this.damageFlash = 0;
         this.screenShake = 0;
         this.currentLevelData = null;
@@ -835,4 +835,28 @@ class Game {
 window.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
 });
-this.score = 0;
+constructor() {
+    this.currentLevel = 0;
+    this.gameState = 'menu';
+    this.score = 0;
+
+    this.player = {
+        x: 0,
+        y: 0,
+        health: 100,
+        maxHealth: 100,
+        energy: 100,
+        maxEnergy: 100,
+        sanity: 100,
+        maxSanity: 100,
+        inventory: [],
+        lastDamageTime: 0
+    };endGame(won, message = '') {
+addScore(points) {
+    this.score += points;
+
+    this.showMessage(
+        `🏆 +${points} points ! Score : ${this.score}`,
+        'warning'
+    );
+}
