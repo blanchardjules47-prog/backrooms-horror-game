@@ -315,19 +315,45 @@ body {
     background-position: center;
 }
 
+/* PERSONNAGE HUMAIN */
 .player {
-    width: 30px;
-    height: 30px;
-    background: #00ff00;
+    position: absolute;
+    width: 40px;
+    height: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Tête du joueur */
+.player::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background: #ffccaa;
     border-radius: 50%;
-    border: 2px solid #00aa00;
-    box-shadow: 0 0 10px #00ff00;
+    border: 2px solid #ffaa88;
+    margin-bottom: 2px;
+    box-shadow: 0 0 8px rgba(0, 200, 255, 0.6);
+}
+
+/* Corps du joueur */
+.player::after {
+    content: '';
+    width: 20px;
+    height: 28px;
+    background: linear-gradient(to bottom, #0088ff 40%, #0055ff 100%);
+    border: 2px solid #00ffff;
+    border-radius: 4px;
+    box-shadow: 0 0 12px rgba(0, 200, 255, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 .entity.hostile {
     background: #ff0000;
     border: 2px solid #aa0000;
     animation: flicker 0.1s infinite;
+    border-radius: 4px;
 }
 
 @keyframes flicker {
@@ -338,6 +364,7 @@ body {
 .entity.friendly {
     background: #00ffff;
     border: 2px solid #0088ff;
+    border-radius: 4px;
 }
 
 .door {
@@ -372,6 +399,7 @@ body {
     background: #ffff00;
     border: 1px solid #ffaa00;
     cursor: pointer;
+    border-radius: 3px;
 }
 
 /* Responsive */
@@ -415,4 +443,3 @@ body {
     color: #fff;
     margin: 15px 0;
 }
-
