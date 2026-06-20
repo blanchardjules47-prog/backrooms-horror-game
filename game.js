@@ -212,7 +212,12 @@ class Game {
             this.loadLevel(this.currentLevel);
             this.player.x = this.viewport.width / 2;
             this.player.y = this.viewport.height / 2;
-            this.showMessage(`Vous entrez dans ${this.currentLevelData.name}`, 'warning');
+            
+            // RESTAURATION DES PV ET ÉNERGIE À 100!
+            this.player.health = 100;
+            this.player.energy = 100;
+            
+            this.showMessage(`Vous entrez dans ${this.currentLevelData.name} - Vous êtes régénéré!`, 'warning');
         } else if (door.special === 'exit') {
             this.endGame(true);
         }
