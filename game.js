@@ -835,3 +835,4 @@ class Game {
 window.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
 });
+this.score = 0;
