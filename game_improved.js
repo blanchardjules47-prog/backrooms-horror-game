@@ -1,4 +1,4 @@
-// ===== BACKROOMS HORROR GAME =====
+// ===== BACKROOMS HORROR GAME - VERSION AMÉLIORÉE =====
 
 class Game {
     constructor() {
@@ -13,7 +13,8 @@ class Game {
             maxEnergy: 100,
             sanity: 100,
             maxSanity: 100,
-            inventory: []
+            inventory: [],
+            lastDamageTime: 0
         };
         
         this.viewport = {
@@ -26,6 +27,8 @@ class Game {
         this.objects = [];
         this.keys = {};
         this.playerElement = null;
+        this.damageFlash = 0; // Pour l'effet de flash
+        this.screenShake = 0; // Pour le screen shake
         
         this.init();
     }
@@ -75,11 +78,14 @@ class Game {
             maxEnergy: 100,
             sanity: 100,
             maxSanity: 100,
-            inventory: []
+            inventory: [],
+            lastDamageTime: 0
         };
         this.entities = [];
         this.objects = [];
         this.playerElement = null;
+        this.damageFlash = 0;
+        this.screenShake = 0;
         
         this.showScreen('game-screen');
         this.loadLevel(this.currentLevel);
@@ -96,7 +102,20 @@ class Game {
         if (levelIndex < levels.length) {
             const level = levels[levelIndex];
             this.currentLevelData = level;
-            this.entities = level.entities.map(e => ({...e}));
+            // Copier les entités avec des propriétés d'IA améliorées
+            this.entities = level.entities.map(e => ({
+                ...e,
+                vx: 0,
+                vy: 0,
+                searchRadius: 300, // Distance de détection
+                chaseSpeed: 2.5,
+                patrolSpeed: 0.8,
+                lastSeenX: null,
+                lastSeenY: null,
+                state: 'patrol', // patrol, chase, hunt
+                detectionTimer: 0,
+                movementPattern: Math.random() // Pour la patrouille
+            }));
             this.objects = level.objects.map(o => ({...o}));
         }
     }
@@ -106,6 +125,7 @@ class Game {
             name: 'Level 0 - The Lobby',
             description: 'Un couloir jaune infini. Des fluorescents qui grésillent. L\'air sent le moisi.',
             backgroundColor: '#ffd700',
+            difficulty: 1,
             entities: [
                 { x: 100, y: 100, type: 'entity', hostile: false, name: 'Drone' },
                 { x: 500, y: 400, type: 'entity', hostile: true, name: 'Figure sombre' }
@@ -123,6 +143,7 @@ class Game {
             name: 'Level 1 - The Habitation Block',
             description: 'Appartements abandonnés. Silence oppressant. Des bruits de pas résonnent.',
             backgroundColor: '#8b7355',
+            difficulty: 2,
             entities: [
                 { x: 200, y: 150, type: 'entity', hostile: false, name: 'Entité neutre' },
                 { x: 600, y: 300, type: 'entity', hostile: true, name: 'Guetteur' },
@@ -141,6 +162,7 @@ class Game {
             name: 'Level 2 - The Pipes',
             description: 'Tuyauterie géante. Humidité intense. Eau qui s\'écoule. Bruits métalliques.',
             backgroundColor: '#4a4a4a',
+            difficulty: 3,
             entities: [
                 { x: 300, y: 200, type: 'entity', hostile: true, name: 'Guetteur Aquatique' },
                 { x: 500, y: 400, type: 'entity', hostile: true, name: 'Créature des profondeurs' },
@@ -213,11 +235,11 @@ class Game {
             this.player.x = this.viewport.width / 2;
             this.player.y = this.viewport.height / 2;
             
-            // RESTAURATION DES PV ET ÉNERGIE À 100!
-            this.player.health = 100;
-            this.player.energy = 100;
+            // Légère régénération mais pas complète
+            this.player.health = Math.min(this.player.health + 30, this.player.maxHealth);
+            this.player.energy = Math.min(this.player.energy + 30, this.player.maxEnergy);
             
-            this.showMessage(`Vous entrez dans ${this.currentLevelData.name} - Vous êtes régénéré!`, 'warning');
+            this.showMessage(`Vous entrez dans ${this.currentLevelData.name}`, 'warning');
         } else if (door.special === 'exit') {
             this.endGame(true);
         }
@@ -293,6 +315,100 @@ class Game {
         }
     }
 
+    // ========== IA AMÉLIORÉE DES ENTITÉS ==========
+    updateEntities() {
+        this.entities.forEach(entity => {
+            const distToPlayer = this.distance(this.player, entity);
+            
+            if (entity.hostile) {
+                // Vérifier si le joueur est visible
+                const canSee = distToPlayer < entity.searchRadius;
+                
+                // Changer l'état de l'entité
+                if (canSee && distToPlayer < 250) {
+                    entity.state = 'chase';
+                    entity.lastSeenX = this.player.x;
+                    entity.lastSeenY = this.player.y;
+                } else if (entity.lastSeenX !== null && distToPlayer > 350) {
+                    entity.state = 'hunt'; // Cherche le joueur dernièrement vu
+                } else if (!canSee) {
+                    entity.state = 'patrol';
+                }
+
+                // === COMPORTEMENT: CHASE ===
+                if (entity.state === 'chase') {
+                    const dx = this.player.x - entity.x;
+                    const dy = this.player.y - entity.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 30) { // S'arrête pas trop près
+                        const speed = entity.chaseSpeed * (this.currentLevelData.difficulty || 1);
+                        entity.x += (dx / distance) * speed;
+                        entity.y += (dy / distance) * speed;
+                        
+                        // Plus elle chasse, plus elle est intelligente
+                        if (Math.random() < 0.05) {
+                            // Prédiction - essaie d'anticiper les mouvements
+                            const playerVelX = (this.keys['arrowright'] || this.keys['d']) ? 5 : 
+                                              (this.keys['arrowleft'] || this.keys['a']) ? -5 : 0;
+                            const playerVelY = (this.keys['arrowdown'] || this.keys['s']) ? 5 : 
+                                              (this.keys['arrowup'] || this.keys['w']) ? -5 : 0;
+                            
+                            entity.x += playerVelX * 0.3;
+                            entity.y += playerVelY * 0.3;
+                        }
+                    }
+                }
+
+                // === COMPORTEMENT: HUNT ===
+                else if (entity.state === 'hunt' && entity.lastSeenX !== null) {
+                    const dx = entity.lastSeenX - entity.x;
+                    const dy = entity.lastSeenY - entity.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 10) {
+                        const speed = entity.chaseSpeed * 0.6;
+                        entity.x += (dx / distance) * speed;
+                        entity.y += (dy / distance) * speed;
+                    } else {
+                        // Arrivée au dernier emplacement connu, reprendre la patrouille
+                        entity.state = 'patrol';
+                        entity.lastSeenX = null;
+                        entity.lastSeenY = null;
+                    }
+                }
+
+                // === COMPORTEMENT: PATROL ===
+                else if (entity.state === 'patrol') {
+                    // Patrouille plus intelligente
+                    entity.detectionTimer++;
+                    
+                    if (entity.detectionTimer > 60) {
+                        entity.movementPattern = Math.random();
+                        entity.detectionTimer = 0;
+                    }
+                    
+                    // Mouvement sinusoïdal pour plus de réalisme
+                    entity.x += Math.sin(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed;
+                    entity.y += Math.cos(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed;
+                }
+
+            } else {
+                // === ENTITÉS AMICALES: PATROUILLE NEUTRE ===
+                if (Math.random() < 0.02) {
+                    entity.vx = (Math.random() - 0.5) * 2;
+                    entity.vy = (Math.random() - 0.5) * 2;
+                }
+                entity.x += (entity.vx || 0);
+                entity.y += (entity.vy || 0);
+            }
+
+            // Limites du viewport
+            entity.x = Math.max(0, Math.min(entity.x, this.viewport.width));
+            entity.y = Math.max(0, Math.min(entity.y, this.viewport.height));
+        });
+    }
+
     updateStats() {
         // Dégénération naturelle
         this.player.energy -= 0.1;
@@ -307,10 +423,19 @@ class Game {
         this.entities.forEach(entity => {
             if (entity.hostile) {
                 const dist = this.distance(this.player, entity);
-                if (dist < 150) {
-                    this.player.sanity -= 0.3;
-                    if (dist < 50) {
-                        this.player.health -= 0.5;
+                
+                // Peur: plus proche = plus de perte de sanité
+                if (dist < 200) {
+                    const fearFactor = 1 - (dist / 200);
+                    this.player.sanity -= 0.2 * fearFactor;
+                }
+                
+                // Dégâts: très proche = dégâts
+                if (dist < 50) {
+                    const now = Date.now();
+                    if (now - this.player.lastDamageTime > 500) { // Délai entre les dégâts
+                        this.takeDamage(15);
+                        this.player.lastDamageTime = now;
                     }
                 }
             }
@@ -327,6 +452,20 @@ class Game {
         if (this.player.sanity <= 0) {
             this.endGame(false, 'Votre esprit a cédé à la folie des Backrooms...');
         }
+    }
+
+    // ========== FEEDBACK VISUEL ==========
+    takeDamage(amount) {
+        this.player.health -= amount;
+        this.damageFlash = 0.8; // Intensité du flash (0-1)
+        this.screenShake = 15; // Force du tremblement
+        
+        // Animation du bar de santé
+        const healthBar = document.getElementById('health-bar');
+        healthBar.classList.add('damage-pulse');
+        setTimeout(() => healthBar.classList.remove('damage-pulse'), 300);
+        
+        this.showMessage('💥 VOUS AVEZ PRIS DES DÉGÂTS!', 'danger');
     }
 
     updateHUD() {
@@ -374,43 +513,58 @@ class Game {
         }
     }
 
-    updateEntities() {
-        this.entities.forEach(entity => {
-            if (entity.hostile) {
-                // IA simple: se rapprocher du joueur
-                const dx = this.player.x - entity.x;
-                const dy = this.player.y - entity.y;
-                const distance = Math.sqrt(dx*dx + dy*dy);
-                
-                if (distance > 50) {
-                    const speed = Math.random() * 2;
-                    entity.x += (dx / distance) * speed;
-                    entity.y += (dy / distance) * speed;
-                }
-            } else {
-                // Patrouille aléatoire
-                if (Math.random() < 0.02) {
-                    entity.vx = (Math.random() - 0.5) * 3;
-                    entity.vy = (Math.random() - 0.5) * 3;
-                }
-                entity.x += (entity.vx || 0);
-                entity.y += (entity.vy || 0);
-            }
-
-            // Limites
-            entity.x = Math.max(0, Math.min(entity.x, this.viewport.width));
-            entity.y = Math.max(0, Math.min(entity.y, this.viewport.height));
-        });
-    }
-
     render() {
         const viewport = document.getElementById('viewport');
-        viewport.style.background = this.currentLevelData.backgroundColor + '30';
+        
+        // === EFFETS VISUELS DE FEEDBACK ===
+        let filters = [];
 
-        // Effets visuels selon la sanité
+        // 1. Flash de dégâts (blanc/rouge)
+        if (this.damageFlash > 0) {
+            const flashColor = this.damageFlash > 0.5 ? '#ff0000' : '#ff6666';
+            viewport.style.backgroundColor = flashColor;
+            viewport.style.opacity = this.damageFlash * 0.5;
+            this.damageFlash -= 0.08;
+        } else {
+            viewport.style.opacity = 1;
+            viewport.style.backgroundColor = this.currentLevelData.backgroundColor + '30';
+        }
+
+        // 2. Screen Shake (tremblements de caméra)
+        if (this.screenShake > 0) {
+            const shakeX = (Math.random() - 0.5) * this.screenShake;
+            const shakeY = (Math.random() - 0.5) * this.screenShake;
+            viewport.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
+            this.screenShake -= 0.5;
+        } else {
+            viewport.style.transform = 'none';
+        }
+
+        // 3. Effets de sanité basse
         if (this.player.sanity < 50) {
-            const distortion = (50 - this.player.sanity) / 50 * 10;
-            viewport.style.filter = `grayscale(${distortion}%) brightness(${1 - distortion/20})`;
+            const distortion = (50 - this.player.sanity) / 50;
+            filters.push(`grayscale(${distortion * 50}%)`);
+            filters.push(`brightness(${1 - distortion * 0.15})`);
+            
+            // Vignette d'horreur
+            if (this.player.sanity < 30) {
+                filters.push(`drop-shadow(0 0 40px rgba(255, 0, 0, ${distortion * 0.3}))`);
+            }
+        }
+
+        // 4. Vignette d'avertissement selon la santé
+        if (this.player.health < 40) {
+            const healthFactor = 1 - (this.player.health / 40);
+            viewport.style.boxShadow = `inset 0 0 60px rgba(255, 0, 0, ${healthFactor * 0.4})`;
+        } else if (this.player.energy < 30) {
+            const energyFactor = 1 - (this.player.energy / 30);
+            viewport.style.boxShadow = `inset 0 0 40px rgba(0, 150, 255, ${energyFactor * 0.3})`;
+        } else {
+            viewport.style.boxShadow = 'none';
+        }
+
+        if (filters.length > 0) {
+            viewport.style.filter = filters.join(' ');
         } else {
             viewport.style.filter = 'none';
         }
@@ -433,10 +587,19 @@ class Game {
         
         this.entities.forEach((entity, index) => {
             const el = document.createElement('div');
-            el.className = 'entity' + (entity.hostile ? ' hostile' : ' friendly');
+            const isHostile = entity.hostile;
+            const state = entity.state || 'neutral';
+            
+            el.className = 'entity' + (isHostile ? ' hostile' : ' friendly');
+            
+            // Ajouter une classe pour l'état de l'IA
+            if (isHostile) {
+                el.classList.add(state); // patrol, chase, hunt
+            }
+            
             el.style.left = entity.x - 20 + 'px';
             el.style.top = entity.y - 20 + 'px';
-            el.title = entity.name;
+            el.title = entity.name + (isHostile ? ` [${state}]` : '');
             viewport.appendChild(el);
         });
 
