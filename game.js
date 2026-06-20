@@ -25,6 +25,7 @@ class Game {
         this.entities = [];
         this.objects = [];
         this.keys = {};
+        this.playerElement = null;
         
         this.init();
     }
@@ -78,6 +79,7 @@ class Game {
         };
         this.entities = [];
         this.objects = [];
+        this.playerElement = null;
         
         this.showScreen('game-screen');
         this.loadLevel(this.currentLevel);
@@ -408,15 +410,17 @@ class Game {
             viewport.style.filter = 'none';
         }
 
-        // Afficher le joueur
-        if (!document.getElementById('player')) {
-            const playerEl = document.createElement('div');
-            playerEl.id = 'player';
-            playerEl.className = 'player';
-            viewport.appendChild(playerEl);
+        // Créer ou récupérer l'élément du joueur
+        if (!this.playerElement) {
+            this.playerElement = document.createElement('div');
+            this.playerElement.id = 'player';
+            this.playerElement.className = 'player';
+            viewport.appendChild(this.playerElement);
         }
-        document.getElementById('player').style.left = this.player.x - 15 + 'px';
-        document.getElementById('player').style.top = this.player.y - 15 + 'px';
+        
+        // Mettre à jour la position du joueur
+        this.playerElement.style.left = (this.player.x - 15) + 'px';
+        this.playerElement.style.top = (this.player.y - 15) + 'px';
 
         // Afficher les entités
         const existingEntities = viewport.querySelectorAll('.entity');
