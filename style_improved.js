@@ -119,6 +119,7 @@ body {
     height: 100%;
     background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
     overflow: hidden;
+    transition: filter 0.1s, transform 0.05s, box-shadow 0.2s;
 }
 
 /* HUD */
@@ -174,6 +175,17 @@ body {
 
 .bar-fill.health.danger {
     background: linear-gradient(90deg, #ff0000, #ff3333);
+}
+
+/* Animation de pulsation lors des dégâts */
+.bar-fill.damage-pulse {
+    animation: healthPulse 0.3s;
+}
+
+@keyframes healthPulse {
+    0% { box-shadow: 0 0 10px #ff0000; }
+    50% { box-shadow: 0 0 20px #ff0000, inset 0 0 10px #ff0000; }
+    100% { box-shadow: 0 0 5px #ff0000; }
 }
 
 .bar-fill.energy {
@@ -238,6 +250,7 @@ body {
 .item-slot:hover {
     border-color: #666;
     background: rgba(80, 80, 80, 0.8);
+    transform: scale(1.05);
 }
 
 /* Message Box */
@@ -256,15 +269,41 @@ body {
     display: flex;
     align-items: center;
     font-size: 0.95em;
+    animation: messageSlide 0.3s ease-out;
+}
+
+@keyframes messageSlide {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .message-box.warning {
     border-left-color: #ffff00;
+    background: rgba(20, 20, 0, 0.9);
 }
 
 .message-box.danger {
     border-left-color: #ff0000;
-    animation: shake 0.3s;
+    animation: messageDangerSlide 0.3s, shake 0.3s;
+    background: rgba(30, 0, 0, 0.9);
+    font-weight: bold;
+}
+
+@keyframes messageDangerSlide {
+    from {
+        transform: translateX(-100%) scaleY(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) scaleY(1);
+        opacity: 1;
+    }
 }
 
 @keyframes shake {
@@ -285,10 +324,16 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: fadeIn 0.3s;
 }
 
 .pause-menu.hidden {
     display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .pause-content {
@@ -297,6 +342,18 @@ body {
     border: 2px solid #ff3333;
     padding: 40px;
     border-radius: 10px;
+    animation: scaleIn 0.3s;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .pause-content h2 {
@@ -305,7 +362,8 @@ body {
     margin-bottom: 30px;
 }
 
-/* Entities et objets du jeu */
+/* ========== ENTITIES ET OBJETS DU JEU ========== */
+
 .entity {
     position: absolute;
     width: 40px;
@@ -315,7 +373,7 @@ body {
     background-position: center;
 }
 
-/* PERSONNAGE HUMAIN */
+/* PERSONNAGE DU JOUEUR */
 .player {
     position: absolute;
     width: 40px;
@@ -324,6 +382,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    z-index: 100;
 }
 
 /* Tête du joueur */
@@ -349,7 +408,8 @@ body {
     box-shadow: 0 0 12px rgba(0, 200, 255, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
-/* CRÉATURE HOSTILE - Créature maigre et terrifiante */
+/* ========== CRÉATURES HOSTILES ========== */
+
 .entity.hostile {
     position: absolute;
     width: 60px;
@@ -361,6 +421,29 @@ body {
     align-items: center;
     justify-content: flex-start;
     animation: flicker 0.15s infinite;
+}
+
+/* États de l'IA - couleurs différentes */
+.entity.hostile.patrol {
+    opacity: 0.6;
+}
+
+.entity.hostile.hunt {
+    animation: flicker 0.1s infinite, entityPulse 1.5s infinite;
+}
+
+.entity.hostile.chase {
+    animation: flicker 0.08s infinite, entityIntense 0.5s infinite;
+}
+
+@keyframes entityPulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+@keyframes entityIntense {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 5px #ff0000); }
+    50% { filter: brightness(1.4) drop-shadow(0 0 15px #ff0000); }
 }
 
 /* Tête de la créature hostile */
@@ -403,6 +486,7 @@ body {
     50% { opacity: 0.6; }
 }
 
+/* CRÉATURES AMICALES */
 .entity.friendly {
     position: absolute;
     width: 40px;
@@ -411,8 +495,15 @@ body {
     border: 2px solid #0088ff;
     border-radius: 50%;
     box-shadow: 0 0 10px #00ffff;
+    animation: friendlyGlow 2s infinite;
 }
 
+@keyframes friendlyGlow {
+    0%, 100% { box-shadow: 0 0 10px #00ffff; }
+    50% { box-shadow: 0 0 20px #00ffff, 0 0 30px #0088ff; }
+}
+
+/* PORTES */
 .door {
     width: 50px;
     height: 80px;
@@ -433,12 +524,21 @@ body {
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
+    animation: doorGlow 1.5s infinite;
+}
+
+@keyframes doorGlow {
+    0%, 100% { box-shadow: 0 0 5px #ffff00; }
+    50% { box-shadow: 0 0 15px #ffff00; }
 }
 
 .door:hover {
     background: linear-gradient(90deg, #888 0%, #aaa 50%, #888 100%);
+    border-color: #666;
+    transform: scale(1.05);
 }
 
+/* ITEMS */
 .item {
     width: 20px;
     height: 20px;
@@ -446,6 +546,23 @@ body {
     border: 1px solid #ffaa00;
     cursor: pointer;
     border-radius: 3px;
+    animation: itemBob 1.5s infinite ease-in-out;
+    box-shadow: 0 0 8px #ffff00;
+}
+
+@keyframes itemBob {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+.item:hover {
+    animation: itemBobFast 0.8s infinite ease-in-out;
+    box-shadow: 0 0 15px #ffff00;
+}
+
+@keyframes itemBobFast {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
 }
 
 /* Responsive */
@@ -459,10 +576,15 @@ body {
         left: 10px;
         right: 10px;
         bottom: 10px;
+        font-size: 0.85em;
     }
 
     .message-box {
         max-width: calc(100% - 40px);
+    }
+
+    .stat-bar label {
+        min-width: 80px;
     }
 }
 
