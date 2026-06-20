@@ -177,7 +177,6 @@ body {
     background: linear-gradient(90deg, #ff0000, #ff3333);
 }
 
-/* Animation de pulsation lors des dégâts */
 .bar-fill.damage-pulse {
     animation: healthPulse 0.3s;
 }
@@ -270,6 +269,7 @@ body {
     align-items: center;
     font-size: 0.95em;
     animation: messageSlide 0.3s ease-out;
+    white-space: pre-wrap;
 }
 
 @keyframes messageSlide {
@@ -362,18 +362,7 @@ body {
     margin-bottom: 30px;
 }
 
-/* ========== ENTITIES ET OBJETS DU JEU ========== */
-
-.entity {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-/* PERSONNAGE DU JOUEUR */
+/* ========== PLAYER ==========*/
 .player {
     position: absolute;
     width: 40px;
@@ -385,7 +374,6 @@ body {
     z-index: 100;
 }
 
-/* Tête du joueur */
 .player::before {
     content: '';
     width: 16px;
@@ -397,7 +385,6 @@ body {
     box-shadow: 0 0 8px rgba(0, 200, 255, 0.6);
 }
 
-/* Corps du joueur */
 .player::after {
     content: '';
     width: 20px;
@@ -408,102 +395,253 @@ body {
     box-shadow: 0 0 12px rgba(0, 200, 255, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
-/* ========== CRÉATURES HOSTILES ========== */
+/* ========== CRÉATURES: 5 TYPES DIFFÉRENTS ==========*/
 
-.entity.hostile {
+.entity {
     position: absolute;
-    width: 60px;
-    height: 80px;
-    background: transparent;
-    border: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+}
+
+/* ========== TYPE 1: SHADOW - Créature d'ombre rapide ==========*/
+.entity.shadow {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+    border: 2px solid #4a4aff;
+    border-radius: 5px;
+    box-shadow: 0 0 15px #4a4aff;
     animation: flicker 0.15s infinite;
 }
 
-/* États de l'IA - couleurs différentes */
-.entity.hostile.patrol {
-    opacity: 0.6;
+.entity.shadow.patrol {
+    opacity: 0.5;
+    box-shadow: 0 0 5px #4a4aff;
 }
 
-.entity.hostile.hunt {
-    animation: flicker 0.1s infinite, entityPulse 1.5s infinite;
+.entity.shadow.hunt {
+    animation: flicker 0.1s infinite, shadowPulse 1.5s infinite;
 }
 
-.entity.hostile.chase {
-    animation: flicker 0.08s infinite, entityIntense 0.5s infinite;
+.entity.shadow.chase {
+    animation: flicker 0.08s infinite, shadowIntense 0.5s infinite;
+    box-shadow: 0 0 25px #4a4aff, 0 0 40px #0088ff;
 }
 
-@keyframes entityPulse {
+@keyframes shadowPulse {
     0%, 100% { filter: brightness(1); }
     50% { filter: brightness(1.3); }
 }
 
-@keyframes entityIntense {
-    0%, 100% { filter: brightness(1) drop-shadow(0 0 5px #ff0000); }
-    50% { filter: brightness(1.4) drop-shadow(0 0 15px #ff0000); }
+@keyframes shadowIntense {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 10px #4a4aff); }
+    50% { filter: brightness(1.4) drop-shadow(0 0 20px #0088ff); }
 }
 
-/* Tête de la créature hostile */
-.entity.hostile::before {
+/* ========== TYPE 2: WATCHER - Créature qui regarde ==========*/
+.entity.watcher {
+    width: 45px;
+    height: 45px;
+    background: radial-gradient(circle, #2a2a4a, #0a0a1a);
+    border: 3px solid #ff8800;
+    border-radius: 50%;
+    box-shadow: 0 0 20px #ff8800;
+    animation: flicker 0.2s infinite;
+}
+
+.entity.watcher::before {
     content: '';
-    width: 20px;
-    height: 24px;
-    background: #2a2a2a;
-    border: 3px solid #ff0000;
-    border-radius: 8px;
-    margin-bottom: 2px;
-    box-shadow: 0 0 15px #ff0000, inset 0 0 8px rgba(0, 0, 0, 0.8);
-}
-
-/* Corps de la créature hostile */
-.entity.hostile::after {
-    content: '';
-    width: 8px;
-    height: 50px;
-    background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 100%);
-    border: 2px solid #ff4444;
-    box-shadow: 0 0 10px #ff0000;
-    border-radius: 2px;
-    position: relative;
-    margin-top: -4px;
-}
-
-/* Jambes de la créature hostile - longues et maigres */
-.entity.hostile {
-    background: 
-        linear-gradient(90deg, transparent 35%, #ff4444 35%, #ff4444 40%, transparent 40%, transparent 60%, #ff4444 60%, #ff4444 65%, transparent 65%),
-        transparent;
-    background-size: 100% 25px;
-    background-position: 0 55px;
-    background-repeat: no-repeat;
-}
-
-@keyframes flicker {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-
-/* CRÉATURES AMICALES */
-.entity.friendly {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    background: #00ffff;
-    border: 2px solid #0088ff;
+    width: 12px;
+    height: 12px;
+    background: #ffff00;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px #ffff00;
+    animation: watcherEye 0.8s infinite;
+}
+
+@keyframes watcherEye {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+}
+
+.entity.watcher.patrol {
+    opacity: 0.6;
+}
+
+.entity.watcher.hunt {
+    animation: flicker 0.1s infinite, watcherAlert 1.2s infinite;
+}
+
+.entity.watcher.chase {
+    animation: flicker 0.08s infinite, watcherHunt 0.4s infinite;
+    box-shadow: 0 0 30px #ff8800, 0 0 50px #ff4400;
+}
+
+@keyframes watcherAlert {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.4); }
+}
+
+@keyframes watcherHunt {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 30px #ff8800; }
+    50% { transform: scale(1.1); box-shadow: 0 0 40px #ff4400; }
+}
+
+/* ========== TYPE 3: CRAWLER - Petite créature rampante ==========*/
+.entity.crawler {
+    width: 25px;
+    height: 25px;
+    background: linear-gradient(45deg, #3a3a00, #1a1a00);
+    border: 2px solid #dddd00;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #dddd00;
+    animation: crawlerScurry 0.4s infinite;
+}
+
+.entity.crawler.patrol {
+    opacity: 0.7;
+    animation: crawlerMove 1.5s infinite ease-in-out;
+}
+
+.entity.crawler.chase {
+    animation: crawlerAttack 0.25s infinite;
+    box-shadow: 0 0 15px #ffff00, 0 0 25px #dddd00;
+}
+
+@keyframes crawlerScurry {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes crawlerMove {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(2px, -2px); }
+    50% { transform: translate(-2px, 2px); }
+    75% { transform: translate(2px, 2px); }
+}
+
+@keyframes crawlerAttack {
+    0%, 100% { transform: scale(1) rotate(0deg); box-shadow: 0 0 15px #ffff00; }
+    50% { transform: scale(0.9) rotate(180deg); box-shadow: 0 0 25px #ff8800; }
+}
+
+/* ========== TYPE 4: REFLECTOR - Reflet du joueur ==========*/
+.entity.reflector {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #4a4a6a, #2a2a4a);
+    border: 3px solid #ff00ff;
+    border-radius: 3px;
+    box-shadow: 0 0 20px #ff00ff;
+    animation: flicker 0.12s infinite;
+}
+
+.entity.reflector::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #ff00ff;
+    box-shadow: inset 0 0 15px #ff00ff;
+    border-radius: 3px;
+    animation: reflectorGlow 0.8s infinite;
+}
+
+@keyframes reflectorGlow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+.entity.reflector.patrol {
+    opacity: 0.8;
+}
+
+.entity.reflector.hunt {
+    animation: flicker 0.1s infinite, reflectorHunt 1s infinite;
+}
+
+.entity.reflector.chase {
+    animation: flicker 0.08s infinite, reflectorChase 0.3s infinite;
+    box-shadow: 0 0 30px #ff00ff, 0 0 50px #ff0088;
+    filter: brightness(1.5);
+}
+
+@keyframes reflectorHunt {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+@keyframes reflectorChase {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* ========== TYPE 5: MACHINE - Entité mécanique ==========*/
+.entity.machine {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(90deg, #333333, #555555);
+    border: 3px solid #ff0000;
+    border-radius: 2px;
+    box-shadow: 0 0 20px #ff0000;
+    animation: flicker 0.1s infinite;
+    clip-path: polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%);
+}
+
+.entity.machine::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #00ff00;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    box-shadow: 0 0 15px #00ff00;
+    animation: machineEye 0.5s infinite;
+}
+
+@keyframes machineEye {
+    0%, 100% { box-shadow: 0 0 15px #00ff00; }
+    50% { box-shadow: 0 0 25px #ff0000; }
+}
+
+.entity.machine.patrol {
+    opacity: 0.7;
+}
+
+.entity.machine.chase {
+    animation: flicker 0.08s infinite, machineActivate 0.4s infinite;
+    box-shadow: 0 0 30px #ff0000, 0 0 50px #ff6600;
+}
+
+@keyframes machineActivate {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(10deg) scale(1.05); }
+    50% { transform: rotate(0deg) scale(1); }
+    75% { transform: rotate(-10deg) scale(1.05); }
+}
+
+/* ========== TYPE 6: DRONE - Entité neutre ==========*/
+.entity.drone {
+    width: 35px;
+    height: 35px;
+    background: radial-gradient(circle, #00ffff, #0088ff);
+    border: 2px solid #00ffff;
     border-radius: 50%;
     box-shadow: 0 0 10px #00ffff;
-    animation: friendlyGlow 2s infinite;
+    animation: droneBob 2s infinite ease-in-out;
 }
 
-@keyframes friendlyGlow {
-    0%, 100% { box-shadow: 0 0 10px #00ffff; }
-    50% { box-shadow: 0 0 20px #00ffff, 0 0 30px #0088ff; }
+@keyframes droneBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
 }
 
-/* PORTES */
+/* ========== PORTES ==========*/
 .door {
     width: 50px;
     height: 80px;
@@ -538,7 +676,7 @@ body {
     transform: scale(1.05);
 }
 
-/* ITEMS */
+/* ========== ITEMS ==========*/
 .item {
     width: 20px;
     height: 20px;
@@ -565,6 +703,11 @@ body {
     50% { transform: translateY(-8px); }
 }
 
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     #start-screen h1 {
@@ -581,6 +724,7 @@ body {
 
     .message-box {
         max-width: calc(100% - 40px);
+        font-size: 0.85em;
     }
 
     .stat-bar label {
