@@ -26,8 +26,7 @@ class Game {
         this.entities = [];
         this.objects = [];
         this.keys = {};
-        thvois-tu, j'ai ouvert le site en entier, car je ne trouve pas le en-game.Wachu musarutsit or notis.playerElement = null;
-        this.damageFlash = 0;
+       
         this.screenShake = 0;
         this.currentLevelData = null;
         
