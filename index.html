@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Les Backrooms - Jeu d'Horreur</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Écran de démarrage -->
+        <div id="start-screen" class="screen active">
+            <div class="menu-content">
+                <h1>LES BACKROOMS</h1>
+                <p class="subtitle">Si tu regardes derrière la réalité, elle te regarde aussi...</p>
+                <button id="start-btn" class="btn-primary">Commencer l'aventure</button>
+                <button id="instructions-btn" class="btn-secondary">Instructions</button>
+            </div>
+        </div>
+
+        <!-- Écran d'instructions -->
+        <div id="instructions-screen" class="screen">
+            <div class="menu-content">
+                <h2>Instructions</h2>
+                <div class="instructions-text">
+                    <p>🎮 <strong>Contrôles:</strong></p>
+                    <ul>
+                        <li><strong>Flèches</strong> ou <strong>ZQSD</strong> pour te déplacer</li>
+                        <li><strong>Espace</strong> ou <strong>Click</strong> pour interagir</li>
+                        <li><strong>E</strong> pour examiner</li>
+                        <li><strong>Échap</strong> pour le menu</li>
+                    </ul>
+                    <p>👻 <strong>Objectif:</strong></p>
+                    <ul>
+                        <li>Échappe aux Backrooms vivant</li>
+                        <li>Trouve les portes de sortie</li>
+                        <li>Évite les entités</li>
+                        <li>Gère ton énergie et ta santé mentale</li>
+                    </ul>
+                </div>
+                <button id="back-btn" class="btn-primary">Retour</button>
+            </div>
+        </div>
+
+        <!-- Écran de jeu principal -->
+        <div id="game-screen" class="screen">
+            <div id="viewport" class="game-viewport"></div>
+            
+            <!-- HUD -->
+            <div id="hud" class="hud">
+                <div class="stats">
+                    <div class="stat-bar">
+                        <label>Santé:</label>
+                        <div class="bar-bg">
+                            <div id="health-bar" class="bar-fill health"></div>
+                        </div>
+                        <span id="health-text">100/100</span>
+                    </div>
+                    <div class="stat-bar">
+                        <label>Énergie:</label>
+                        <div class="bar-bg">
+                            <div id="energy-bar" class="bar-fill energy"></div>
+                        </div>
+                        <span id="energy-text">100/100</span>
+                    </div>
+                    <div class="stat-bar">
+                        <label>Sanité Mentale:</label>
+                        <div class="bar-bg">
+                            <div id="sanity-bar" class="bar-fill sanity"></div>
+                        </div>
+                        <span id="sanity-text">100/100</span>
+                    </div>
+                </div>
+                
+                <div class="location">
+                    <h3 id="room-name">Level 0 - The Lobby</h3>
+                    <p id="room-description"></p>
+                </div>
+
+                <div class="inventory">
+                    <h4>Inventaire:</h4>
+                    <div id="items-list" class="items-grid"></div>
+                </div>
+            </div>
+
+            <!-- Messages et événements -->
+            <div id="message-box" class="message-box"></div>
+
+            <!-- Menu pause -->
+            <div id="pause-menu" class="pause-menu hidden">
+                <div class="pause-content">
+                    <h2>Pause</h2>
+                    <button id="resume-btn" class="btn-primary">Reprendre</button>
+                    <button id="restart-btn" class="btn-secondary">Recommencer</button>
+                    <button id="quit-btn" class="btn-secondary">Quitter</button>
+                </div>
+            </div>
+
+            <!-- Écran Game Over -->
+            <div id="game-over-screen" class="screen hidden">
+                <div class="menu-content">
+                    <h1 id="game-over-title">GAME OVER</h1>
+                    <p id="game-over-message"></p>
+                    <button id="retry-btn" class="btn-primary">Recommencer</button>
+                    <button id="main-menu-btn" class="btn-secondary">Menu Principal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
