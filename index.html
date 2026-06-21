@@ -5,8 +5,273 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Les Backrooms - Jeu d'Horreur</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Admin Panel Styles */
+        .admin-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            z-index: 999;
+            display: none;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        .admin-panel h3 {
+            color: #00ff00;
+            margin-top: 0;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        .admin-button {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 12px;
+            margin: 5px 0;
+            cursor: pointer;
+            border-radius: 3px;
+            width: 100%;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .admin-button:hover {
+            background: rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .admin-input {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            border-radius: 3px;
+        }
+
+        .admin-input::placeholder {
+            color: #00880088;
+        }
+
+        .admin-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .admin-text {
+            color: #00ff00;
+            font-size: 0.8em;
+            margin: 5px 0;
+            word-break: break-all;
+        }
+
+        .admin-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 0, 0.2);
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00ff00;
+            font-weight: bold;
+            z-index: 998;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .admin-toggle:hover {
+            background: rgba(0, 255, 0, 0.4);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+        }
+
+        .admin-toggle.hide {
+            display: none;
+        }
+
+        .admin-close {
+            background: #ff0000;
+            border: 1px solid #ff0000;
+            color: #fff;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            width: 100%;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .admin-close:hover {
+            background: #ff3333;
+        }
+
+        /* Login Admin */
+        .admin-login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .admin-login-screen.active {
+            display: flex;
+        }
+
+        .admin-login-box {
+            background: #000;
+            border: 3px solid #00ff00;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.7);
+        }
+
+        .admin-login-box h2 {
+            color: #00ff00;
+            margin-bottom: 20px;
+        }
+
+        .admin-login-box input {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px;
+            margin: 10px 0;
+            width: 200px;
+            font-family: 'Courier New', monospace;
+            border-radius: 3px;
+            font-size: 1em;
+        }
+
+        .admin-login-box input::placeholder {
+            color: #00880088;
+        }
+
+        .admin-login-box input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+        }
+
+        .admin-login-btn {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .admin-login-btn:hover {
+            background: rgba(0, 255, 0, 0.4);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+        }
+
+        .admin-error {
+            color: #ff0000;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
+    <!-- Admin Login Screen -->
+    <div id="admin-login-screen" class="admin-login-screen">
+        <div class="admin-login-box">
+            <h2>🔐 ACCÈS ADMIN</h2>
+            <p style="color: #00ff00; margin-bottom: 20px;">Code requis:</p>
+            <input type="password" id="admin-code-input" placeholder="Entrez le code..." />
+            <br/>
+            <button class="admin-login-btn" onclick="window.game.checkAdminCode()">Valider</button>
+            <div id="admin-error" class="admin-error"></div>
+        </div>
+    </div>
+
+    <!-- Admin Toggle Button -->
+    <div id="admin-toggle" class="admin-toggle hide" onclick="window.game.toggleAdminPanel()">⚙️</div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="admin-panel">
+        <h3>⚙️ ADMIN PANEL</h3>
+        
+        <div class="admin-text">Status: <span id="admin-status">Offline</span></div>
+        <div class="admin-text">Level: <span id="admin-level">0</span>/5</div>
+        <div class="admin-text">Creatures: <span id="admin-creatures">0</span></div>
+
+        <hr style="border-color: #00ff00; margin: 10px 0;">
+
+        <h4 style="color: #00ff00; margin: 10px 0;">🎮 GAMEPLAY</h4>
+        <button class="admin-button" onclick="window.game.adminSetInvulnerable()">God Mode: OFF</button>
+        <button class="admin-button" onclick="window.game.adminAddHealth(50)">+50 HP</button>
+        <button class="admin-button" onclick="window.game.adminAddEnergy(50)">+50 Energy</button>
+        <button class="admin-button" onclick="window.game.adminAddSanity(50)">+50 Sanity</button>
+        <button class="admin-button" onclick="window.game.adminKillAllEnemies()">Tuer tous les monstres</button>
+
+        <hr style="border-color: #00ff00; margin: 10px 0;">
+
+        <h4 style="color: #00ff00; margin: 10px 0;">🏢 NIVEAUX</h4>
+        <button class="admin-button" onclick="window.game.adminNextLevel()">Level suivant</button>
+        <button class="admin-button" onclick="window.game.adminPrevLevel()">Level précédent</button>
+        <button class="admin-button" onclick="window.game.adminGoToLevel(0)">→ Level 0</button>
+        <button class="admin-button" onclick="window.game.adminGoToLevel(1)">→ Level 1</button>
+        <button class="admin-button" onclick="window.game.adminGoToLevel(2)">→ Level 2</button>
+        <button class="admin-button" onclick="window.game.adminGoToLevel(3)">→ Level 3</button>
+        <button class="admin-button" onclick="window.game.adminGoToLevel(4)">→ Level 4</button>
+        <button class="admin-button" onclick="window.game.adminGoToLevel(5)">→ Level 5 (Exit)</button>
+
+        <hr style="border-color: #00ff00; margin: 10px 0;">
+
+        <h4 style="color: #00ff00; margin: 10px 0;">👹 MONSTRES</h4>
+        <button class="admin-button" onclick="window.game.adminSpawnMonster('shadow')">Spawn Smiler</button>
+        <button class="admin-button" onclick="window.game.adminSpawnMonster('watcher')">Spawn Hound</button>
+        <button class="admin-button" onclick="window.game.adminSpawnMonster('crawler')">Spawn Wretch</button>
+        <button class="admin-button" onclick="window.game.adminSpawnMonster('reflector')">Spawn Skin-Walker</button>
+        <button class="admin-button" onclick="window.game.adminSpawnMonster('machine')">Spawn Lurker</button>
+
+        <hr style="border-color: #00ff00; margin: 10px 0;">
+
+        <h4 style="color: #00ff00; margin: 10px 0;">📊 INFO</h4>
+        <button class="admin-button" onclick="window.game.adminShowStats()">Afficher Stats</button>
+        <button class="admin-button" onclick="window.game.adminShowEntities()">Afficher Monstres</button>
+        <button class="admin-button" onclick="window.game.adminClearConsole()">Effacer Console</button>
+
+        <button class="admin-close" onclick="window.game.toggleAdminPanel()">Fermer Panel</button>
+    </div>
+
     <div id="game-container">
         <!-- Écran de démarrage -->
         <div id="start-screen" class="screen active">
