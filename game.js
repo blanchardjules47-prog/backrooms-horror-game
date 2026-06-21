@@ -857,15 +857,21 @@ class Game {
         if (input.value === this.ADMIN_CODE) {
             this.adminMode = true;
             document.getElementById('admin-login-screen').classList.remove('active');
-            document.getElementById('admin-toggle').classList.remove('hide');
             this.showMessage('✅ Mode Admin activé!', 'warning');
             input.value = '';
+            this.toggleAdminPanel();
         } else {
             document.getElementById('admin-error').textContent = '❌ Code incorrect!';
             setTimeout(() => {
                 document.getElementById('admin-error').textContent = '';
             }, 3000);
         }
+    }
+
+    closeAdminLogin() {
+        document.getElementById('admin-login-screen').classList.remove('active');
+        document.getElementById('admin-code-input').value = '';
+        document.getElementById('admin-error').textContent = '';
     }
 
     toggleAdminPanel() {
