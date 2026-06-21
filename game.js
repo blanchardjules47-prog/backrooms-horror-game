@@ -285,15 +285,18 @@ class Game {
     }
 
     interact() {
-        const interactRadius = 50;
+        const interactRadius = 100; // AUGMENTÉ DE 50 À 100!
         const nearbyObject = this.objects.find(obj => this.distance(this.player, obj) < interactRadius);
 
         if (nearbyObject) {
             if (nearbyObject.type === 'door') {
                 this.enterDoor(nearbyObject);
+                this.showMessage('✅ Porte activée!', 'warning');
             } else if (nearbyObject.type === 'item') {
                 this.pickupItem(nearbyObject);
             }
+        } else {
+            this.showMessage('❌ Pas de porte à proximité!', 'danger');
         }
     }
 
@@ -848,35 +851,79 @@ class Game {
 
     // ========== ADMIN FUNCTIONS ==========
     showAdminLogin() {
-        document.getElementById('admin-login-screen').classList.add('active');
-        document.getElementById('admin-code-input').focus();
+        const loginScreen = document.getElementById('admin-login-screen');
+        const input = document.getElementById('admin-code-input');
+        if (loginScreen) {
+            loginScreen.classList.add('active');
+        }
+        if (input) {
+            input.focus();
+            setTimeout(() => input.focus(), 100);
+        }
+        console.log('Admin login affiché');
     }
 
     checkAdminCode() {
         const input = document.getElementById('admin-code-input');
-        if (input.value === this.ADMIN_CODE) {
+        const code = input.value.trim();
+        
+        console.log('Code entré:', code);
+        console.log('Code attendu:', this.ADMIN_CODE);
+        
+        if (code === this.ADMIN_CODE) {
+            console.log('✅ Code correct!');
             this.adminMode = true;
-            document.getElementById('admin-login-screen').classList.remove('active');
-            this.showMessage('✅ Mode Admin activé!', 'warning');
+            
+            // Fermer le login
+            const loginScreen = document.getElementById('admin-login-screen');
+            if (loginScreen) {
+                loginScreen.classList.remove('active');
+            }
+            
+            // Ouvrir le panel admin
+            const adminPanel = document.getElementById('admin-panel');
+            if (adminPanel) {
+                adminPanel.classList.add('active');
+            }
+            
+            if (this.gameState === 'playing') {
+                this.showMessage('✅ Mode Admin activé!', 'warning');
+            }
+            
             input.value = '';
-            this.toggleAdminPanel();
+            console.log('Admin mode activé!');
         } else {
-            document.getElementById('admin-error').textContent = '❌ Code incorrect!';
-            setTimeout(() => {
-                document.getElementById('admin-error').textContent = '';
-            }, 3000);
+            console.log('❌ Code incorrect!');
+            const errorDiv = document.getElementById('admin-error');
+            if (errorDiv) {
+                errorDiv.textContent = '❌ Code incorrect! (Essaye: 1337)';
+                setTimeout(() => {
+                    errorDiv.textContent = '';
+                }, 3000);
+            }
         }
     }
 
     closeAdminLogin() {
-        document.getElementById('admin-login-screen').classList.remove('active');
-        document.getElementById('admin-code-input').value = '';
-        document.getElementById('admin-error').textContent = '';
+        const loginScreen = document.getElementById('admin-login-screen');
+        if (loginScreen) {
+            loginScreen.classList.remove('active');
+        }
+        const input = document.getElementById('admin-code-input');
+        if (input) {
+            input.value = '';
+        }
+        const errorDiv = document.getElementById('admin-error');
+        if (errorDiv) {
+            errorDiv.textContent = '';
+        }
     }
 
     toggleAdminPanel() {
-        if (this.adminMode) {
-            document.getElementById('admin-panel').classList.toggle('active');
+        const adminPanel = document.getElementById('admin-panel');
+        if (adminPanel) {
+            adminPanel.classList.toggle('active');
+            console.log('Admin Panel:', adminPanel.classList.contains('active') ? 'OUVERT' : 'FERMÉ');
         }
     }
 
