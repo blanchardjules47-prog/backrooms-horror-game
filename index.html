@@ -1,113 +1,835 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Les Backrooms - Jeu d'Horreur</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="game-container">
-        <!-- Écran de démarrage -->
-        <div id="start-screen" class="screen active">
-            <div class="menu-content">
-                <h1>LES BACKROOMS</h1>
-                <p class="subtitle">Si tu regardes derrière la réalité, elle te regarde aussi...</p>
-                <button id="start-btn" class="btn-primary">Commencer l'aventure</button>
-                <button id="instructions-btn" class="btn-secondary">Instructions</button>
-            </div>
-        </div>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        <!-- Écran d'instructions -->
-        <div id="instructions-screen" class="screen">
-            <div class="menu-content">
-                <h2>Instructions</h2>
-                <div class="instructions-text">
-                    <p>🎮 <strong>Contrôles:</strong></p>
-                    <ul>
-                        <li><strong>Flèches</strong> ou <strong>ZQSD</strong> pour te déplacer</li>
-                        <li><strong>Espace</strong> ou <strong>Click</strong> pour interagir</li>
-                        <li><strong>E</strong> pour examiner</li>
-                        <li><strong>Échap</strong> pour le menu</li>
-                    </ul>
-                    <p>👻 <strong>Objectif:</strong></p>
-                    <ul>
-                        <li>Échappe aux Backrooms vivant</li>
-                        <li>Trouve les portes de sortie</li>
-                        <li>Évite les entités</li>
-                        <li>Gère ton énergie et ta santé mentale</li>
-                    </ul>
-                </div>
-                <button id="back-btn" class="btn-primary">Retour</button>
-            </div>
-        </div>
+body {
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #ccc;
+    overflow: hidden;
+}
 
-        <!-- Écran de jeu principal -->
-        <div id="game-screen" class="screen">
-            <div id="viewport" class="game-viewport"></div>
-            
-            <!-- HUD -->
-            <div id="hud" class="hud">
-                <div class="stats">
-                    <div class="stat-bar">
-                        <label>Santé:</label>
-                        <div class="bar-bg">
-                            <div id="health-bar" class="bar-fill health"></div>
-                        </div>
-                        <span id="health-text">100/100</span>
-                    </div>
-                    <div class="stat-bar">
-                        <label>Énergie:</label>
-                        <div class="bar-bg">
-                            <div id="energy-bar" class="bar-fill energy"></div>
-                        </div>
-                        <span id="energy-text">100/100</span>
-                    </div>
-                    <div class="stat-bar">
-                        <label>Sanité Mentale:</label>
-                        <div class="bar-bg">
-                            <div id="sanity-bar" class="bar-fill sanity"></div>
-                        </div>
-                        <span id="sanity-text">100/100</span>
-                    </div>
-                </div>
-                
-                <div class="location">
-                    <h3 id="room-name">Level 0 - The Lobby</h3>
-                    <p id="room-description"></p>
-                </div>
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
 
-                <div class="inventory">
-                    <h4>Inventaire:</h4>
-                    <div id="items-list" class="items-grid"></div>
-                </div>
-            </div>
+/* Écrans */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
 
-            <!-- Messages et événements -->
-            <div id="message-box" class="message-box"></div>
+.screen.active {
+    opacity: 1;
+    pointer-events: all;
+}
 
-            <!-- Menu pause -->
-            <div id="pause-menu" class="pause-menu hidden">
-                <div class="pause-content">
-                    <h2>Pause</h2>
-                    <button id="resume-btn" class="btn-primary">Reprendre</button>
-                    <button id="restart-btn" class="btn-secondary">Recommencer</button>
-                    <button id="quit-btn" class="btn-secondary">Quitter</button>
-                </div>
-            </div>
+.menu-content {
+    text-align: center;
+    color: #fff;
+    max-width: 600px;
+    padding: 40px;
+}
 
-            <!-- Écran Game Over -->
-            <div id="game-over-screen" class="screen hidden">
-                <div class="menu-content">
-                    <h1 id="game-over-title">GAME OVER</h1>
-                    <p id="game-over-message"></p>
-                    <button id="retry-btn" class="btn-primary">Recommencer</button>
-                    <button id="main-menu-btn" class="btn-secondary">Menu Principal</button>
-                </div>
-            </div>
-        </div>
-    </div>
+#start-screen h1 {
+    font-size: 4em;
+    margin-bottom: 20px;
+    color: #ff3333;
+    text-shadow: 0 0 20px #ff3333;
+    animation: pulse 2s infinite;
+}
 
-    <script src="game.js"></script>
-</body>
-</html>
+@keyframes pulse {
+    0%, 100% { text-shadow: 0 0 20px #ff3333; }
+    50% { text-shadow: 0 0 40px #ff3333, 0 0 60px #ff0000; }
+}
+
+.subtitle {
+    font-size: 1.2em;
+    color: #999;
+    margin-bottom: 40px;
+    font-style: italic;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 15px 40px;
+    font-size: 1.1em;
+    border: 2px solid;
+    background: transparent;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.btn-primary {
+    border-color: #ff3333;
+    color: #ff3333;
+}
+
+.btn-primary:hover {
+    background: #ff3333;
+    color: #000;
+    box-shadow: 0 0 20px #ff3333;
+}
+
+.btn-secondary {
+    border-color: #666;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    border-color: #999;
+    color: #999;
+}
+
+#game-screen {
+    opacity: 0;
+    pointer-events: none;
+    background: #1a1a1a;
+}
+
+#game-screen.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.game-viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    overflow: hidden;
+    transition: filter 0.1s, transform 0.05s, box-shadow 0.2s;
+}
+
+.hud {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #333;
+    border-radius: 5px;
+    padding: 20px;
+    max-width: 400px;
+    color: #ccc;
+}
+
+.stats {
+    margin-bottom: 20px;
+}
+
+.stat-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.stat-bar label {
+    min-width: 120px;
+    font-weight: bold;
+}
+
+.bar-bg {
+    flex: 1;
+    height: 20px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-fill {
+    height: 100%;
+    width: 100%;
+    transition: width 0.3s;
+}
+
+.bar-fill.health {
+    background: linear-gradient(90deg, #00ff00, #ffff00);
+}
+
+.bar-fill.health.danger {
+    background: linear-gradient(90deg, #ff0000, #ff3333);
+}
+
+.bar-fill.damage-pulse {
+    animation: healthPulse 0.3s;
+}
+
+@keyframes healthPulse {
+    0% { box-shadow: 0 0 10px #ff0000; }
+    50% { box-shadow: 0 0 20px #ff0000, inset 0 0 10px #ff0000; }
+    100% { box-shadow: 0 0 5px #ff0000; }
+}
+
+.bar-fill.energy {
+    background: linear-gradient(90deg, #00ffff, #0088ff);
+}
+
+.bar-fill.sanity {
+    background: linear-gradient(90deg, #ff00ff, #ff0088);
+}
+
+.stat-bar span {
+    min-width: 80px;
+    text-align: right;
+}
+
+.location {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.location h3 {
+    color: #ffff00;
+    margin-bottom: 5px;
+    font-size: 1.1em;
+}
+
+.location p {
+    font-size: 0.85em;
+    color: #999;
+}
+
+.inventory {
+    font-size: 0.9em;
+}
+
+.inventory h4 {
+    color: #ccc;
+    margin-bottom: 8px;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 5px;
+}
+
+.item-slot {
+    width: 60px;
+    height: 60px;
+    background: rgba(50, 50, 50, 0.8);
+    border: 1px solid #444;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.item-slot:hover {
+    border-color: #666;
+    background: rgba(80, 80, 80, 0.8);
+    transform: scale(1.05);
+}
+
+.message-box {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 500px;
+    background: rgba(0, 0, 0, 0.8);
+    border-left: 4px solid #ff3333;
+    padding: 15px;
+    border-radius: 3px;
+    color: #ccc;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    font-size: 0.95em;
+    animation: messageSlide 0.3s ease-out;
+    white-space: pre-wrap;
+}
+
+@keyframes messageSlide {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.message-box.warning {
+    border-left-color: #ffff00;
+    background: rgba(20, 20, 0, 0.9);
+}
+
+.message-box.danger {
+    border-left-color: #ff0000;
+    animation: messageDangerSlide 0.3s, shake 0.3s;
+    background: rgba(30, 0, 0, 0.9);
+    font-weight: bold;
+}
+
+@keyframes messageDangerSlide {
+    from {
+        transform: translateX(-100%) scaleY(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) scaleY(1);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.pause-menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s;
+}
+
+.pause-menu.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.pause-content {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #ff3333;
+    padding: 40px;
+    border-radius: 10px;
+    animation: scaleIn 0.3s;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.pause-content h2 {
+    color: #ff3333;
+    font-size: 2em;
+    margin-bottom: 30px;
+}
+
+/* ========== PLAYER ==========*/
+.player {
+    position: absolute;
+    width: 40px;
+    height: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    z-index: 100;
+}
+
+.player::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background: #ffccaa;
+    border-radius: 50%;
+    border: 2px solid #ffaa88;
+    margin-bottom: 2px;
+    box-shadow: 0 0 8px rgba(0, 200, 255, 0.6);
+}
+
+.player::after {
+    content: '';
+    width: 20px;
+    height: 28px;
+    background: linear-gradient(to bottom, #0088ff 40%, #0055ff 100%);
+    border: 2px solid #00ffff;
+    border-radius: 4px;
+    box-shadow: 0 0 12px rgba(0, 200, 255, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+/* ========== CRÉATURES DES BACKROOMS ==========*/
+
+.entity {
+    position: absolute;
+}
+
+/* ========== TYPE 1: SMILER - Sourires horrifiants ==========*/
+.entity.shadow {
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle at 30% 30%, #ffffff, #000000);
+    border-radius: 50%;
+    box-shadow: 0 0 20px #ffffff;
+    animation: flicker 0.15s infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Yeux du Smiler */
+.entity.shadow::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #000;
+    border-radius: 50%;
+    top: 15px;
+    left: 12px;
+    box-shadow: 20px 0 0 #000;
+    animation: smilerEyes 0.5s infinite;
+}
+
+@keyframes smilerEyes {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* Sourire du Smiler */
+.entity.shadow::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 12px;
+    border: 2px solid #ffffff;
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    bottom: 8px;
+    left: 12px;
+    box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.entity.shadow.patrol {
+    opacity: 0.6;
+    box-shadow: 0 0 10px #ffffff;
+}
+
+.entity.shadow.hunt {
+    animation: flicker 0.1s infinite, smilerHunt 1.5s infinite;
+}
+
+.entity.shadow.chase {
+    animation: flicker 0.08s infinite, smilerChase 0.4s infinite;
+    box-shadow: 0 0 30px #ffffff, 0 0 50px #ffff88;
+}
+
+@keyframes smilerHunt {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.4); }
+}
+
+@keyframes smilerChase {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* ========== TYPE 2: HOUND - Créature sans tête ==========*/
+.entity.watcher {
+    width: 60px;
+    height: 40px;
+    background: linear-gradient(to right, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+    border: 2px solid #666;
+    border-radius: 5px;
+    box-shadow: 0 0 15px #ff6600;
+    animation: houndCrawl 0.8s infinite;
+    position: relative;
+}
+
+/* Pattes du Hound */
+.entity.watcher::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, #333 0px, #333 8px, transparent 8px, transparent 12px);
+    bottom: -8px;
+    left: 0;
+}
+
+/* Bulbe (tête qui regarde) */
+.entity.watcher::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 16px;
+    background: radial-gradient(circle, #ffff00, #ff8800);
+    border-radius: 50% 50% 30% 30%;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 0 10px #ff8800;
+}
+
+@keyframes houndCrawl {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(3px) translateY(-2px); }
+    50% { transform: translateX(0) translateY(2px); }
+    75% { transform: translateX(-3px) translateY(-2px); }
+}
+
+.entity.watcher.patrol {
+    opacity: 0.7;
+}
+
+.entity.watcher.hunt {
+    animation: houndCrawl 0.5s infinite, houndAlert 1s infinite;
+}
+
+.entity.watcher.chase {
+    animation: houndCrawl 0.3s infinite, houndAttack 0.4s infinite;
+    box-shadow: 0 0 30px #ff6600, 0 0 50px #ff0000;
+}
+
+@keyframes houndAlert {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+@keyframes houndAttack {
+    0%, 100% { transform: scaleX(1); }
+    50% { transform: scaleX(1.1); }
+}
+
+/* ========== TYPE 3: WRETCH - Petite créature noire ==========*/
+.entity.crawler {
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+    border: 2px solid #2a2a2a;
+    border-radius: 3px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    animation: wretchTwitch 0.3s infinite;
+    position: relative;
+}
+
+/* Yeux rouges du Wretch */
+.entity.crawler::before {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #ff0000;
+    border-radius: 50%;
+    top: 8px;
+    left: 6px;
+    box-shadow: 12px 0 0 #ff0000;
+}
+
+/* Gueule */
+.entity.crawler::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 6px;
+    background: #ff0000;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+}
+
+@keyframes wretchTwitch {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(2px, -1px) rotate(-2deg); }
+    50% { transform: translate(-1px, 1px) rotate(1deg); }
+    75% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.entity.crawler.patrol {
+    opacity: 0.8;
+}
+
+.entity.crawler.chase {
+    animation: wretchTwitch 0.15s infinite, wretchFeed 0.6s infinite;
+    box-shadow: 0 0 15px #ff0000;
+}
+
+@keyframes wretchFeed {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* ========== TYPE 4: SKIN-WALKER - Silhouette humanoïde anormale ==========*/
+.entity.reflector {
+    width: 40px;
+    height: 60px;
+    background: linear-gradient(to bottom, #1a1a2a 0%, #0a0a1a 100%);
+    border: 2px solid #4a4a8a;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 0 20px #4a4a8a;
+    animation: flicker 0.15s infinite;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 5px;
+}
+
+/* Tête étrange */
+.entity.reflector::before {
+    content: '';
+    width: 16px;
+    height: 18px;
+    background: radial-gradient(circle, #2a2a4a, #0a0a1a);
+    border: 2px solid #4a4a8a;
+    border-radius: 50%;
+    box-shadow: inset 0 0 5px rgba(74, 74, 138, 0.5);
+}
+
+/* Corps allongé anormal */
+.entity.reflector::after {
+    content: '';
+    width: 14px;
+    height: 32px;
+    background: linear-gradient(to bottom, #1a1a3a, #0a0a1a);
+    border-left: 2px solid #4a4a8a;
+    border-right: 2px solid #4a4a8a;
+    position: absolute;
+    top: 25px;
+    box-shadow: 0 0 8px rgba(74, 74, 138, 0.5);
+}
+
+.entity.reflector.patrol {
+    opacity: 0.7;
+}
+
+.entity.reflector.hunt {
+    animation: flicker 0.1s infinite, skinwalkerHunt 1.2s infinite;
+}
+
+.entity.reflector.chase {
+    animation: flicker 0.08s infinite, skinwalkerChase 0.4s infinite;
+    box-shadow: 0 0 30px #4a4a8a, 0 0 50px #8888ff;
+    filter: brightness(1.3);
+}
+
+@keyframes skinwalkerHunt {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(5deg); }
+}
+
+@keyframes skinwalkerChase {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(1.1); }
+}
+
+/* ========== TYPE 5: LURKER - Créature qui observe ==========*/
+.entity.machine {
+    width: 45px;
+    height: 45px;
+    background: radial-gradient(circle at 40% 40%, #3a3a3a, #0a0a0a);
+    border: 3px solid #ff0000;
+    border-radius: 50%;
+    box-shadow: 0 0 20px #ff0000;
+    animation: flicker 0.12s infinite;
+    position: relative;
+}
+
+/* Gros oeil central */
+.entity.machine::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, #ff0000 0%, #8800000 70%);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: inset 0 0 10px rgba(255, 0, 0, 0.8), 0 0 15px #ff0000;
+}
+
+/* Pupille qui change */
+.entity.machine::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #000;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 5px #000;
+}
+
+.entity.machine.patrol {
+    opacity: 0.6;
+}
+
+.entity.machine.chase {
+    animation: flicker 0.08s infinite, lurkerIntense 0.4s infinite;
+    box-shadow: 0 0 30px #ff0000, 0 0 50px #ff4400;
+    filter: brightness(1.4);
+}
+
+@keyframes lurkerIntense {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* ========== TYPE 6: DRONE - Entité neutre ==========*/
+.entity.drone {
+    width: 35px;
+    height: 35px;
+    background: radial-gradient(circle, #00ffff, #0088ff);
+    border: 2px solid #00ffff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00ffff;
+    animation: droneBob 2s infinite ease-in-out;
+}
+
+@keyframes droneBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* DOORS & ITEMS */
+.door {
+    width: 50px;
+    height: 80px;
+    background: linear-gradient(90deg, #666 0%, #999 50%, #666 100%);
+    border: 3px solid #333;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.door::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #ffff00;
+    border-radius: 50%;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: doorGlow 1.5s infinite;
+}
+
+@keyframes doorGlow {
+    0%, 100% { box-shadow: 0 0 5px #ffff00; }
+    50% { box-shadow: 0 0 15px #ffff00; }
+}
+
+.door:hover {
+    background: linear-gradient(90deg, #888 0%, #aaa 50%, #888 100%);
+    border-color: #666;
+    transform: scale(1.05);
+}
+
+.item {
+    width: 20px;
+    height: 20px;
+    background: #ffff00;
+    border: 1px solid #ffaa00;
+    cursor: pointer;
+    border-radius: 3px;
+    animation: itemBob 1.5s infinite ease-in-out;
+    box-shadow: 0 0 8px #ffff00;
+}
+
+@keyframes itemBob {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+.item:hover {
+    animation: itemBobFast 0.8s infinite ease-in-out;
+    box-shadow: 0 0 15px #ffff00;
+}
+
+@keyframes itemBobFast {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@media (max-width: 768px) {
+    #start-screen h1 {
+        font-size: 2.5em;
+    }
+
+    .hud {
+        max-width: 100%;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        font-size: 0.85em;
+    }
+
+    .message-box {
+        max-width: calc(100% - 40px);
+        font-size: 0.85em;
+    }
+}
+
+.instructions-text {
+    text-align: left;
+    background: rgba(50, 50, 50, 0.5);
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.instructions-text ul {
+    margin-left: 20px;
+    margin-top: 10px;
+}
+
+.instructions-text li {
+    margin: 8px 0;
+    color: #ccc;
+}
+
+.instructions-text p {
+    color: #fff;
+    margin: 15px 0;
+}
