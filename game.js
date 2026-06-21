@@ -1,4 +1,4 @@
-// ===== BACKROOMS HORROR GAME - HARDCORE EDITION (FIXED) =====
+// ===== BACKROOMS HORROR GAME - HARDCORE EDITION WITH ADMIN =====
 
 class Game {
     constructor() {
@@ -26,9 +26,15 @@ class Game {
         this.entities = [];
         this.objects = [];
         this.keys = {};
-       
+        this.playerElement = null;
+        this.damageFlash = 0;
         this.screenShake = 0;
         this.currentLevelData = null;
+        
+        // Admin
+        this.adminMode = false;
+        this.invulnerable = false;
+        this.ADMIN_CODE = '1337'; // CODE ADMIN - À CHANGER!
         
         this.init();
     }
@@ -37,6 +43,14 @@ class Game {
         this.setupEventListeners();
         this.showScreen('start-screen');
         window.addEventListener('resize', () => this.handleResize());
+        
+        // Easter egg pour afficher le login admin
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F1') {
+                e.preventDefault();
+                this.showAdminLogin();
+            }
+        });
     }
 
     setupEventListeners() {
@@ -130,7 +144,6 @@ class Game {
         }
     }
 
-    // ========== LEVELS ==========
     createLevelZero() {
         return {
             name: 'Level 0 - The Lobby',
@@ -532,7 +545,9 @@ class Game {
                         entity.state = 'chase';
                         entity.attackTimer++;
                         if (entity.attackTimer % 30 === 0) {
-                            this.takeDamage(8);
+                            if (!this.invulnerable) {
+                                this.takeDamage(8);
+                            }
                             this.screenShake = 10;
                         }
                         const centerX = entity.x;
@@ -593,7 +608,7 @@ class Game {
                     this.player.sanity -= 0.2 * fearFactor;
                 }
                 
-                if (dist < 50) {
+                if (dist < 50 && !this.invulnerable) {
                     const now = Date.now();
                     if (now - this.player.lastDamageTime > 500) {
                         let damageAmount = 15;
@@ -612,10 +627,10 @@ class Game {
         this.player.energy = Math.max(0, Math.min(this.player.energy, this.player.maxEnergy));
         this.player.sanity = Math.max(0, Math.min(this.player.sanity, this.player.maxSanity));
 
-        if (this.player.health <= 0) {
+        if (this.player.health <= 0 && !this.invulnerable) {
             this.endGame(false, 'Vous avez été déchiqueté...');
         }
-        if (this.player.sanity <= 0) {
+        if (this.player.sanity <= 0 && !this.invulnerable) {
             this.endGame(false, 'Votre esprit a crié dans le vide...');
         }
     }
@@ -774,6 +789,7 @@ class Game {
             this.updateStats();
             this.updateHUD();
             this.render();
+            this.updateAdminPanel();
             
             requestAnimationFrame(() => this.gameLoop());
         }
@@ -829,10 +845,144 @@ class Game {
             document.getElementById('pause-menu').classList.add('hidden');
         }
     }
+
+    // ========== ADMIN FUNCTIONS ==========
+    showAdminLogin() {
+        document.getElementById('admin-login-screen').classList.add('active');
+        document.getElementById('admin-code-input').focus();
+    }
+
+    checkAdminCode() {
+        const input = document.getElementById('admin-code-input');
+        if (input.value === this.ADMIN_CODE) {
+            this.adminMode = true;
+            document.getElementById('admin-login-screen').classList.remove('active');
+            document.getElementById('admin-toggle').classList.remove('hide');
+            this.showMessage('✅ Mode Admin activé!', 'warning');
+            input.value = '';
+        } else {
+            document.getElementById('admin-error').textContent = '❌ Code incorrect!';
+            setTimeout(() => {
+                document.getElementById('admin-error').textContent = '';
+            }, 3000);
+        }
+    }
+
+    toggleAdminPanel() {
+        if (this.adminMode) {
+            document.getElementById('admin-panel').classList.toggle('active');
+        }
+    }
+
+    updateAdminPanel() {
+        if (!this.adminMode) return;
+        document.getElementById('admin-status').textContent = this.gameState;
+        document.getElementById('admin-level').textContent = this.currentLevel;
+        document.getElementById('admin-creatures').textContent = this.entities.filter(e => e.hostile).length;
+    }
+
+    adminSetInvulnerable() {
+        this.invulnerable = !this.invulnerable;
+        const btn = event.target;
+        btn.textContent = 'God Mode: ' + (this.invulnerable ? 'ON' : 'OFF');
+        this.showMessage('God Mode: ' + (this.invulnerable ? 'ACTIVÉ ✅' : 'DÉSACTIVÉ ❌'), 'warning');
+    }
+
+    adminAddHealth(amount) {
+        this.player.health = Math.min(this.player.health + amount, this.player.maxHealth);
+        this.showMessage(`+${amount} HP`, 'warning');
+    }
+
+    adminAddEnergy(amount) {
+        this.player.energy = Math.min(this.player.energy + amount, this.player.maxEnergy);
+        this.showMessage(`+${amount} Energy`, 'warning');
+    }
+
+    adminAddSanity(amount) {
+        this.player.sanity = Math.min(this.player.sanity + amount, this.player.maxSanity);
+        this.showMessage(`+${amount} Sanity`, 'warning');
+    }
+
+    adminKillAllEnemies() {
+        this.entities = this.entities.filter(e => !e.hostile);
+        this.showMessage('Tous les monstres éliminés!', 'warning');
+    }
+
+    adminNextLevel() {
+        if (this.currentLevel < 5) {
+            this.currentLevel++;
+            this.loadLevel(this.currentLevel);
+            this.player.x = this.viewport.width / 2;
+            this.player.y = this.viewport.height / 2;
+            this.showMessage(`Level ${this.currentLevel} chargé!`, 'warning');
+        }
+    }
+
+    adminPrevLevel() {
+        if (this.currentLevel > 0) {
+            this.currentLevel--;
+            this.loadLevel(this.currentLevel);
+            this.player.x = this.viewport.width / 2;
+            this.player.y = this.viewport.height / 2;
+            this.showMessage(`Level ${this.currentLevel} chargé!`, 'warning');
+        }
+    }
+
+    adminGoToLevel(level) {
+        this.currentLevel = level;
+        this.loadLevel(this.currentLevel);
+        this.player.x = this.viewport.width / 2;
+        this.player.y = this.viewport.height / 2;
+        this.showMessage(`Level ${this.currentLevel} chargé!`, 'warning');
+    }
+
+    adminSpawnMonster(type) {
+        const newMonster = {
+            x: Math.random() * this.viewport.width,
+            y: Math.random() * this.viewport.height,
+            type: 'entity',
+            hostile: true,
+            name: type.toUpperCase(),
+            vx: 0,
+            vy: 0,
+            searchRadius: 300,
+            chaseSpeed: 2.5,
+            patrolSpeed: 0.8,
+            lastSeenX: null,
+            lastSeenY: null,
+            state: 'patrol',
+            detectionTimer: 0,
+            movementPattern: Math.random(),
+            health: 50,
+            maxHealth: 50,
+            attackTimer: 0,
+            creatureType: type
+        };
+        this.entities.push(newMonster);
+        this.showMessage(`🚨 ${type} spawn!`, 'danger');
+    }
+
+    adminShowStats() {
+        console.log('=== PLAYER STATS ===');
+        console.log('HP:', this.player.health + '/' + this.player.maxHealth);
+        console.log('Energy:', this.player.energy + '/' + this.player.maxEnergy);
+        console.log('Sanity:', this.player.sanity + '/' + this.player.maxSanity);
+        console.log('Level:', this.currentLevel);
+        console.log('Position:', this.player.x, this.player.y);
+    }
+
+    adminShowEntities() {
+        console.log('=== ENTITIES ===');
+        this.entities.forEach((e, i) => {
+            console.log(i + '.', e.name, '-', e.creatureType, '-', e.state, '- HP:', e.health);
+        });
+    }
+
+    adminClearConsole() {
+        console.clear();
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
 });
-
-    
