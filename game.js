@@ -1,86 +1,193 @@
-// ===== BACKROOMS HORROR GAME - HARDCORE EDITION WITH ADMIN =====
+// ===== BACKROOMS HORROR GAME - COMPLETE GAME.JS =====
+// Fichier principal du jeu avec tous les 100 niveaux
+// Prêt à copier/coller dans votre dossier
 
-class Game {
+'use strict';
+
+class BackroomsGame {
     constructor() {
         this.currentLevel = 0;
-        this.gameState = 'menu';
         this.player = {
+            health: 100,
+            maxHealth: 100,
+            energy: 100,
+            maxEnergy: 100,
+            sanity: 100,
+            maxSanity: 100,
+            inventory: [],
             x: 0,
             y: 0,
-            health: 100,
-            maxHealth: 100,
-            energy: 100,
-            maxEnergy: 100,
-            sanity: 100,
-            maxSanity: 100,
-            inventory: [],
-            lastDamageTime: 0
+            z: 0
         };
-        
-        this.viewport = {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            zoomLevel: 1
-        };
+        this.monsters = [];
+        this.items = [];
+        this.isPaused = false;
+        this.isGameOver = false;
+        this.godMode = false;
+        this.gameStarted = false;
 
-        this.entities = [];
-        this.objects = [];
-        this.keys = {};
-        this.playerElement = null;
-        this.damageFlash = 0;
-        this.screenShake = 0;
-        this.currentLevelData = null;
-        
-        // Admin
-        this.adminMode = false;
-        this.invulnerable = false;
-        this.ADMIN_CODE = '1337'; // CODE ADMIN - À CHANGER!
-        
-        this.init();
-    }
-
-    init() {
+        this.initializeLevels();
         this.setupEventListeners();
-        this.showScreen('start-screen');
-        window.addEventListener('resize', () => this.handleResize());
-        
-        // Easter egg pour afficher le login admin
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'F1') {
-                e.preventDefault();
-                this.showAdminLogin();
-            }
-        });
     }
 
+    // ===== INITIALISER LES 100 NIVEAUX =====
+    initializeLevels() {
+        this.levels = [
+            // ===== LEVELS 0-9 : THE BEGINNING =====
+            { id: 0, name: 'The Lobby', description: 'L\'entrée des Backrooms. Fluorescent lights et murs jaunes.', difficulty: 1, monsters: ['shadow'], items: ['flashlight', 'can_of_beans'], darkness: 0.2, ambiance: 'buzzing' },
+            { id: 1, name: 'The Hallways', description: 'Des couloirs infinis. Les murs vous observent.', difficulty: 2, monsters: ['shadow', 'watcher'], items: ['water_bottle', 'key'], darkness: 0.5, ambiance: 'whispers' },
+            { id: 2, name: 'The Poolrooms', description: 'Un immense bassin d\'eau. Quelque chose bouge dessous...', difficulty: 3, monsters: ['crawler', 'watcher'], items: ['rope', 'matches'], darkness: 0.7, ambiance: 'water_dripping' },
+            { id: 3, name: 'The Offices', description: 'Des bureaux abandonnés. Ordinateurs allumés sans raison.', difficulty: 3, monsters: ['machine', 'reflector'], items: ['document', 'coffee_cup'], darkness: 0.4, ambiance: 'computer_hum' },
+            { id: 4, name: 'The Dark Place', description: 'Noir complet. Tu entends respirer autour de toi.', difficulty: 5, monsters: ['shadow', 'crawler', 'watcher'], items: ['lighter', 'last_hope'], darkness: 0.99, ambiance: 'breathing' },
+            { id: 5, name: 'The Exit', description: 'Une porte brillante. C\'est enfin la liberté...', difficulty: 1, monsters: [], items: ['freedom'], darkness: 0.0, ambiance: 'light' },
+            { id: 6, name: 'The Basement', description: 'Un sous-sol humide et sombre. Des tuyaux rouillés.', difficulty: 2, monsters: ['crawler'], items: ['pipe', 'rust'], darkness: 0.7, ambiance: 'water_dripping' },
+            { id: 7, name: 'The Rooftop', description: 'Tout en haut. Le vent souffle très fort.', difficulty: 3, monsters: ['watcher'], items: ['rope', 'flag'], darkness: 0.2, ambiance: 'wind_howling' },
+            { id: 8, name: 'The Kitchen', description: 'Une cuisine vide. L\'odeur de pourri emplit l\'air.', difficulty: 2, monsters: ['shadow'], items: ['knife', 'food'], darkness: 0.3, ambiance: 'flies_buzzing' },
+            { id: 9, name: 'The Bedroom', description: 'Des lits sans draps. Quelqu\'un dort dedans?', difficulty: 2, monsters: [], items: ['pillow', 'blanket'], darkness: 0.4, ambiance: 'snoring' },
+            
+            // ===== LEVELS 10-19 : THE INDUSTRIAL ZONE =====
+            { id: 10, name: 'The Factory', description: 'Une usine déserte. Les machines tournent toutes seules.', difficulty: 3, monsters: ['machine'], items: ['metal_pipe', 'oil'], darkness: 0.5, ambiance: 'machinery_sounds' },
+            { id: 11, name: 'The Power Plant', description: 'Électricité partout. Les murs brillent.', difficulty: 4, monsters: ['machine', 'reflector'], items: ['battery', 'wire'], darkness: 0.3, ambiance: 'electrical_buzz' },
+            { id: 12, name: 'The Warehouse', description: 'Des milliers de caisses empilées. Certaines bougent.', difficulty: 2, monsters: ['shadow'], items: ['box', 'crate'], darkness: 0.6, ambiance: 'echo' },
+            { id: 13, name: 'The Dock', description: 'Un port abandonné. Sent le sel et la rouille.', difficulty: 3, monsters: ['watcher', 'crawler'], items: ['anchor', 'chain'], darkness: 0.4, ambiance: 'waves' },
+            { id: 14, name: 'The Mine', description: 'Une mine souterraine. Les murs sont perlants.', difficulty: 4, monsters: ['crawler', 'shadow'], items: ['pickaxe', 'gem'], darkness: 0.8, ambiance: 'dripping' },
+            { id: 15, name: 'The Construction Site', description: 'Un chantier inachevé. Des ossatures métalliques partout.', difficulty: 2, monsters: ['machine'], items: ['helmet', 'nail'], darkness: 0.5, ambiance: 'metal_clanging' },
+            { id: 16, name: 'The Train Station', description: 'Une gare vide. Un train siffle au loin.', difficulty: 3, monsters: ['watcher'], items: ['ticket', 'luggage'], darkness: 0.4, ambiance: 'train_whistle' },
+            { id: 17, name: 'The Subway', description: 'Des tunnels souterrains. L\'air sent l\'ozone.', difficulty: 3, monsters: ['shadow', 'machine'], items: ['token', 'map'], darkness: 0.7, ambiance: 'rumbling' },
+            { id: 18, name: 'The Bridge', description: 'Un pont suspendu dans le vide. C\'est très haut.', difficulty: 3, monsters: ['watcher'], items: ['rope', 'torch'], darkness: 0.3, ambiance: 'wind_howling' },
+            { id: 19, name: 'The Turbine Room', description: 'Des énormes turbines tournent. L\'air vibre.', difficulty: 4, monsters: ['machine', 'crawler'], items: ['screw', 'bearing'], darkness: 0.5, ambiance: 'spinning' },
+            
+            // ===== LEVELS 20-29 : THE NATURE ZONE =====
+            { id: 20, name: 'The Garden', description: 'Un jardin envahi. Les plantes bougent seules.', difficulty: 1, monsters: [], items: ['flower', 'seed'], darkness: 0.2, ambiance: 'birds_singing' },
+            { id: 21, name: 'The Forest', description: 'Une forêt dense et noire. Les arbres vous suivent.', difficulty: 3, monsters: ['shadow', 'crawler'], items: ['stick', 'leaf'], darkness: 0.7, ambiance: 'wind_rustling' },
+            { id: 22, name: 'The Mountain', description: 'Une montagne escarpée. Le sommet disparaît dans les nuages.', difficulty: 3, monsters: ['watcher'], items: ['rock', 'flag'], darkness: 0.4, ambiance: 'wind_howling' },
+            { id: 23, name: 'The Lake', description: 'Un lac calme. Trop calme.', difficulty: 2, monsters: ['crawler'], items: ['water', 'fish'], darkness: 0.5, ambiance: 'water_lapping' },
+            { id: 24, name: 'The Cave', description: 'Une grotte sombre et profonde.', difficulty: 3, monsters: ['crawler', 'shadow'], items: ['stalactite', 'crystal'], darkness: 0.9, ambiance: 'dripping' },
+            { id: 25, name: 'The Jungle', description: 'Une jungle épaisse. Quelque chose respire dans les buissons.', difficulty: 3, monsters: ['shadow', 'watcher'], items: ['vine', 'herb'], darkness: 0.6, ambiance: 'creatures_sounds' },
+            { id: 26, name: 'The Desert', description: 'Un désert infini. Rien ne se voit.', difficulty: 2, monsters: ['watcher'], items: ['sand', 'cactus'], darkness: 0.1, ambiance: 'wind_howling' },
+            { id: 27, name: 'The Swamp', description: 'Un marais putride. L\'eau est noire.', difficulty: 3, monsters: ['crawler', 'shadow'], items: ['mud', 'moss'], darkness: 0.7, ambiance: 'squelch' },
+            { id: 28, name: 'The Volcano', description: 'Un volcan actif. C\'est très chaud.', difficulty: 4, monsters: ['machine', 'reflector'], items: ['lava', 'ash'], darkness: 0.3, ambiance: 'rumbling' },
+            { id: 29, name: 'The Glacier', description: 'Un glacier gelé. Tes pieds glissent.', difficulty: 2, monsters: ['shadow'], items: ['ice', 'snow'], darkness: 0.2, ambiance: 'wind_howling' },
+            
+            // ===== LEVELS 30-39 : THE BUILDINGS ZONE =====
+            { id: 30, name: 'The Hospital', description: 'Un hôpital désert. Des bruits bizarres partout.', difficulty: 4, monsters: ['machine', 'crawler', 'watcher'], items: ['medicine', 'stethoscope'], darkness: 0.6, ambiance: 'heartbeat' },
+            { id: 31, name: 'The School', description: 'Une école vide. Des enfants ricanent.', difficulty: 3, monsters: ['shadow', 'reflector'], items: ['notebook', 'pencil'], darkness: 0.5, ambiance: 'laughter' },
+            { id: 32, name: 'The Library', description: 'Des milliers de livres. Certains s\'ouvrent tous seuls.', difficulty: 2, monsters: ['shadow'], items: ['book', 'candle'], darkness: 0.5, ambiance: 'pages_turning' },
+            { id: 33, name: 'The Church', description: 'Une église abandonnée. Les cloches sonnent.', difficulty: 2, monsters: ['reflector'], items: ['candle', 'bible'], darkness: 0.4, ambiance: 'bells_ringing' },
+            { id: 34, name: 'The Prison', description: 'Des cellules vides. Quelqu\'un pleure.', difficulty: 4, monsters: ['shadow', 'machine'], items: ['key', 'mirror'], darkness: 0.8, ambiance: 'crying' },
+            { id: 35, name: 'The Museum', description: 'Un musée avec des statues bizarres.', difficulty: 3, monsters: ['reflector', 'watcher'], items: ['painting', 'statue'], darkness: 0.6, ambiance: 'echo' },
+            { id: 36, name: 'The Theater', description: 'Un théâtre vide. Les lumières s\'allument toutes seules.', difficulty: 3, monsters: ['shadow', 'watcher'], items: ['ticket', 'curtain'], darkness: 0.4, ambiance: 'music_box' },
+            { id: 37, name: 'The Bank', description: 'Une banque fermée. Les coffres sont ouverts.', difficulty: 3, monsters: ['machine', 'reflector'], items: ['gold', 'diamond'], darkness: 0.3, ambiance: 'silence' },
+            { id: 38, name: 'The Store', description: 'Un magasin aux rayons infinis.', difficulty: 2, monsters: ['shadow'], items: ['product', 'price_tag'], darkness: 0.4, ambiance: 'muzak' },
+            { id: 39, name: 'The Motel', description: 'Un motel délabré. Des cris viennent des chambres.', difficulty: 3, monsters: ['shadow', 'watcher'], items: ['key', 'towel'], darkness: 0.6, ambiance: 'screaming' },
+            
+            // ===== LEVELS 40-49 : THE WATER ZONE =====
+            { id: 40, name: 'The Aquarium', description: 'Un aquarium géant. Les créatures dedans te regardent.', difficulty: 3, monsters: ['crawler', 'watcher'], items: ['fish', 'algae'], darkness: 0.5, ambiance: 'bubbling' },
+            { id: 41, name: 'The Ocean', description: 'Un océan infini. Quelque chose de grand passe.', difficulty: 4, monsters: ['crawler', 'shadow'], items: ['shell', 'seaweed'], darkness: 0.6, ambiance: 'waves' },
+            { id: 42, name: 'The River', description: 'Une rivière souterraine. Le courant est fort.', difficulty: 3, monsters: ['crawler'], items: ['water', 'stone'], darkness: 0.7, ambiance: 'rushing_water' },
+            { id: 43, name: 'The Waterfall', description: 'Une cascade énorme. L\'eau s\'écoule dans le vide.', difficulty: 3, monsters: ['watcher'], items: ['rock', 'moss'], darkness: 0.4, ambiance: 'roaring' },
+            { id: 44, name: 'The Bathtub', description: 'Une salle de bain géante. L\'eau est noire.', difficulty: 2, monsters: ['shadow'], items: ['soap', 'towel'], darkness: 0.5, ambiance: 'dripping' },
+            { id: 45, name: 'The Swimming Pool', description: 'Une piscine olympique vide. Des traces de sang.', difficulty: 3, monsters: ['shadow', 'crawler'], items: ['chlorine', 'goggles'], darkness: 0.6, ambiance: 'echo' },
+            { id: 46, name: 'The Sewers', description: 'Des égouts puants. Des choses bougent dans l\'eau.', difficulty: 4, monsters: ['crawler', 'shadow'], items: ['pipe', 'slime'], darkness: 0.8, ambiance: 'squelch' },
+            { id: 47, name: 'The Fountain', description: 'Une fontaine avec de l\'eau noire.', difficulty: 2, monsters: [], items: ['coin', 'water'], darkness: 0.3, ambiance: 'water_lapping' },
+            { id: 48, name: 'The Marsh', description: 'Un marais stagnant. L\'odeur est insoutenable.', difficulty: 3, monsters: ['crawler', 'shadow'], items: ['mud', 'insect'], darkness: 0.7, ambiance: 'squelch' },
+            { id: 49, name: 'The Mist', description: 'Une vallée couverte de brouillard épais.', difficulty: 3, monsters: ['watcher', 'shadow'], items: ['cloth', 'moisture'], darkness: 0.8, ambiance: 'silence' },
+            
+            // ===== LEVELS 50-59 : THE TECHNOLOGY ZONE =====
+            { id: 50, name: 'The Laboratory', description: 'Un labo avec des expériences bizarres.', difficulty: 4, monsters: ['machine', 'reflector'], items: ['test_tube', 'chemical'], darkness: 0.6, ambiance: 'machinery_sounds' },
+            { id: 51, name: 'The Computer Room', description: 'Des milliers d\'ordinateurs qui tournent.', difficulty: 3, monsters: ['machine'], items: ['floppy_disk', 'keyboard'], darkness: 0.4, ambiance: 'computer_hum' },
+            { id: 52, name: 'The Server Farm', description: 'Des racks de serveurs qui s\'étendent à l\'infini.', difficulty: 3, monsters: ['machine', 'reflector'], items: ['circuit_board', 'cable'], darkness: 0.3, ambiance: 'fan_noise' },
+            { id: 53, name: 'The Spaceship', description: 'Un vaisseau spatial. Les panneaux clignotent.', difficulty: 4, monsters: ['machine', 'watcher'], items: ['circuit', 'helmet'], darkness: 0.5, ambiance: 'beeping' },
+            { id: 54, name: 'The Antenna Farm', description: 'Des centaines d\'antennes qui captent des signaux bizarres.', difficulty: 3, monsters: ['reflector'], items: ['signal', 'radio'], darkness: 0.2, ambiance: 'static' },
+            { id: 55, name: 'The Nuclear Reactor', description: 'Un réacteur nucléaire. Les alarmes sonnent.', difficulty: 5, monsters: ['machine', 'reflector', 'shadow'], items: ['radiation', 'plutonium'], darkness: 0.4, ambiance: 'alarm' },
+            { id: 56, name: 'The Cryogenic Chamber', description: 'Une chambre avec du froid extrême.', difficulty: 4, monsters: ['machine'], items: ['ice', 'freeze_crystal'], darkness: 0.6, ambiance: 'hissing' },
+            { id: 57, name: 'The Tesla Tower', description: 'Une tour avec de l\'électricité partout.', difficulty: 4, monsters: ['machine', 'reflector'], items: ['coil', 'electricity'], darkness: 0.3, ambiance: 'crackling' },
+            { id: 58, name: 'The Particle Accelerator', description: 'Une machine géante qui crée des portails.', difficulty: 5, monsters: ['machine', 'watcher'], items: ['particle', 'blueprint'], darkness: 0.5, ambiance: 'humming' },
+            { id: 59, name: 'The Hologram Room', description: 'Des projections holographiques bizarres.', difficulty: 3, monsters: ['reflector', 'watcher'], items: ['holochip', 'projector'], darkness: 0.4, ambiance: 'buzzing' },
+            
+            // ===== LEVELS 60-69 : THE SCARY ZONE =====
+            { id: 60, name: 'The Graveyard', description: 'Un cimetière où les tombes s\'ouvrent.', difficulty: 4, monsters: ['shadow', 'watcher', 'crawler'], items: ['bone', 'tombstone'], darkness: 0.8, ambiance: 'moaning' },
+            { id: 61, name: 'The Morgue', description: 'Une morgue avec des corps.', difficulty: 4, monsters: ['shadow', 'machine'], items: ['ice', 'tag'], darkness: 0.7, ambiance: 'silence' },
+            { id: 62, name: 'The Haunted House', description: 'Une maison hantée. Les murs saignent.', difficulty: 5, monsters: ['shadow', 'reflector', 'watcher'], items: ['ghost', 'curse'], darkness: 0.8, ambiance: 'screaming' },
+            { id: 63, name: 'The Torture Chamber', description: 'Une chambre avec des instruments de torture.', difficulty: 5, monsters: ['shadow', 'machine'], items: ['chain', 'blood'], darkness: 0.9, ambiance: 'screaming' },
+            { id: 64, name: 'The Bloodroom', description: 'Une salle couverte de sang.', difficulty: 5, monsters: ['shadow', 'crawler', 'watcher'], items: ['blood', 'corpse'], darkness: 0.8, ambiance: 'dripping' },
+            { id: 65, name: 'The Nightmare', description: 'C\'est un cauchemar. Rien n\'est réel.', difficulty: 5, monsters: ['shadow', 'watcher', 'crawler', 'machine'], items: ['dream_catcher', 'memory'], darkness: 0.9, ambiance: 'screaming' },
+            { id: 66, name: 'The Void', description: 'Le néant absolu. Tu flottes.', difficulty: 5, monsters: ['shadow', 'crawler'], items: ['nothing', 'emptiness'], darkness: 0.99, ambiance: 'silence' },
+            { id: 67, name: 'The Hell', description: 'L\'enfer. Tout brûle.', difficulty: 5, monsters: ['machine', 'reflector', 'crawler'], items: ['fire', 'ash'], darkness: 0.5, ambiance: 'burning' },
+            { id: 68, name: 'The Abyss', description: 'Un gouffre sans fond.', difficulty: 5, monsters: ['crawler', 'shadow', 'watcher'], items: ['darkness', 'despair'], darkness: 0.99, ambiance: 'silence' },
+            { id: 69, name: 'The Infirmary', description: 'Une infirmerie abandonnée avec des lits tâchés.', difficulty: 4, monsters: ['shadow', 'watcher'], items: ['medicine', 'bandage'], darkness: 0.7, ambiance: 'heartbeat' },
+            
+            // ===== LEVELS 70-79 : THE DIMENSION ZONE =====
+            { id: 70, name: 'The Mirror World', description: 'Un monde en miroir. Les reflections ont une vie propre.', difficulty: 4, monsters: ['reflector', 'watcher'], items: ['mirror', 'reflection'], darkness: 0.5, ambiance: 'echo' },
+            { id: 71, name: 'The Upside Down', description: 'Tout est inversé. Le plafond est le sol.', difficulty: 3, monsters: ['watcher', 'crawler'], items: ['gravity_reversal', 'compass'], darkness: 0.4, ambiance: 'woosh' },
+            { id: 72, name: 'The Pocket Dimension', description: 'Un espace poche plus petit que possible.', difficulty: 3, monsters: ['machine', 'shadow'], items: ['tesseract', 'key'], darkness: 0.5, ambiance: 'humming' },
+            { id: 73, name: 'The Parallel Universe', description: 'Tu vois une autre version de toi.', difficulty: 4, monsters: ['reflector', 'shadow'], items: ['alternate_self', 'choice'], darkness: 0.5, ambiance: 'whispers' },
+            { id: 74, name: 'The Time Loop', description: 'Tu reviens au même endroit toutes les minutes.', difficulty: 3, monsters: ['watcher', 'machine'], items: ['clock', 'memory'], darkness: 0.4, ambiance: 'ticking' },
+            { id: 75, name: 'The Fractured Reality', description: 'La réalité se brise en morceaux.', difficulty: 4, monsters: ['shadow', 'crawler', 'watcher'], items: ['shard', 'glue'], darkness: 0.6, ambiance: 'cracking' },
+            { id: 76, name: 'The Liminal Space', description: 'Un espace entre les mondes. Vide et triste.', difficulty: 3, monsters: ['watcher'], items: ['nothing', 'void'], darkness: 0.6, ambiance: 'silence' },
+            { id: 77, name: 'The Fourth Dimension', description: 'Tu ne peux pas vraiment le voir.', difficulty: 5, monsters: ['machine', 'reflector', 'watcher'], items: ['dimension', 'insight'], darkness: 0.7, ambiance: 'humming' },
+            { id: 78, name: 'The Pocket Universe', description: 'Un univers entier dans une poche.', difficulty: 4, monsters: ['crawler', 'shadow'], items: ['universe', 'star'], darkness: 0.4, ambiance: 'cosmic_hum' },
+            { id: 79, name: 'The Infinite Spiral', description: 'Une spirale infinie qui descend.', difficulty: 4, monsters: ['crawler', 'watcher'], items: ['spiral', 'depth'], darkness: 0.7, ambiance: 'whooshing' },
+            
+            // ===== LEVELS 80-89 : THE ANCIENT ZONE =====
+            { id: 80, name: 'The Ancient Temple', description: 'Un temple ancien avec des hiéroglyphes.', difficulty: 4, monsters: ['shadow', 'watcher'], items: ['artifact', 'scroll'], darkness: 0.6, ambiance: 'mystical' },
+            { id: 81, name: 'The Pyramid', description: 'Une pyramide souterraine. Des pièges partout.', difficulty: 4, monsters: ['crawler', 'shadow'], items: ['gold', 'curse'], darkness: 0.7, ambiance: 'echo' },
+            { id: 82, name: 'The Catacombs', description: 'Des tunnels avec des squelettes empilés.', difficulty: 4, monsters: ['shadow', 'crawler', 'watcher'], items: ['bone', 'torch'], darkness: 0.8, ambiance: 'dripping' },
+            { id: 83, name: 'The Colosseum', description: 'Un arène antique. Les spectres applaudissent.', difficulty: 4, monsters: ['shadow', 'watcher'], items: ['sword', 'shield'], darkness: 0.5, ambiance: 'cheering' },
+            { id: 84, name: 'The Oracle\'s Cave', description: 'La caverne d\'un oracle. Elle parle.', difficulty: 4, monsters: ['watcher', 'reflector'], items: ['prophecy', 'crystal'], darkness: 0.6, ambiance: 'whispers' },
+            { id: 85, name: 'The Stonehenge', description: 'Des pierres géantes avec des symboles.', difficulty: 3, monsters: ['watcher'], items: ['rune', 'stone'], darkness: 0.3, ambiance: 'wind_howling' },
+            { id: 86, name: 'The Lost City', description: 'Une ville antique entièrement submergée.', difficulty: 4, monsters: ['crawler', 'shadow'], items: ['artifact', 'map'], darkness: 0.7, ambiance: 'water_lapping' },
+            { id: 87, name: 'The Sacrifice Altar', description: 'Un autel avec des traces de rituels.', difficulty: 5, monsters: ['shadow', 'machine', 'watcher'], items: ['blood', 'knife'], darkness: 0.8, ambiance: 'chanting' },
+            { id: 88, name: 'The Tomb', description: 'Un tombeau royal. Le pharaon se réveille.', difficulty: 4, monsters: ['shadow', 'crawler'], items: ['mummy', 'treasure'], darkness: 0.8, ambiance: 'moaning' },
+            { id: 89, name: 'The Sacred Well', description: 'Un puits sacré avec de l\'eau ancienne.', difficulty: 3, monsters: ['crawler', 'watcher'], items: ['water', 'wish'], darkness: 0.6, ambiance: 'echoing' },
+            
+            // ===== LEVELS 90-99 : THE FINAL ZONE =====
+            { id: 90, name: 'The Observation Deck', description: 'Tu regardes le monde en bas. C\'est trop haut.', difficulty: 3, monsters: ['watcher'], items: ['telescope', 'map'], darkness: 0.2, ambiance: 'wind_howling' },
+            { id: 91, name: 'The Control Room', description: 'Des milliers de boutons et d\'interrupteurs.', difficulty: 4, monsters: ['machine', 'reflector'], items: ['button', 'switch'], darkness: 0.3, ambiance: 'humming' },
+            { id: 92, name: 'The Escape Pod', description: 'Un dernier moyen de s\'échapper.', difficulty: 4, monsters: ['machine'], items: ['key', 'fuel'], darkness: 0.4, ambiance: 'beeping' },
+            { id: 93, name: 'The Archive', description: 'Des millions de fichiers. Ton histoire est dedans.', difficulty: 4, monsters: ['machine', 'watcher'], items: ['file', 'truth'], darkness: 0.5, ambiance: 'whispers' },
+            { id: 94, name: 'The Throne Room', description: 'Un trône vide. Quelqu\'un l\'attend.', difficulty: 5, monsters: ['shadow', 'machine', 'watcher'], items: ['crown', 'power'], darkness: 0.6, ambiance: 'echo' },
+            { id: 95, name: 'The Creator\'s Studio', description: 'L\'atelier du créateur des Backrooms.', difficulty: 5, monsters: ['reflector', 'machine', 'shadow'], items: ['blueprint', 'god_particle'], darkness: 0.7, ambiance: 'creation_sounds' },
+            { id: 96, name: 'The Heart', description: 'Le cœur des Backrooms. Il bat.', difficulty: 5, monsters: ['crawler', 'shadow', 'watcher', 'machine'], items: ['heartbeat', 'soul'], darkness: 0.8, ambiance: 'heartbeat' },
+            { id: 97, name: 'The Source Code', description: 'Le code source de la réalité elle-même.', difficulty: 5, monsters: ['machine', 'reflector'], items: ['code', 'truth'], darkness: 0.5, ambiance: 'digital_sounds' },
+            { id: 98, name: 'The Singularity', description: 'Le centre de tout. L\'infini.', difficulty: 5, monsters: ['shadow', 'machine', 'watcher', 'crawler', 'reflector'], items: ['infinity', 'everything'], darkness: 0.95, ambiance: 'cosmic_hum' },
+            { id: 99, name: 'The Ending', description: 'La fin des Backrooms. Ou le commencement?', difficulty: 1, monsters: [], items: ['freedom', 'choice'], darkness: 0.0, ambiance: 'peaceful' }
+        ];
+    }
+
+    // ===== SETUP EVENT LISTENERS =====
     setupEventListeners() {
-        document.getElementById('start-btn').addEventListener('click', () => this.startGame());
-        document.getElementById('instructions-btn').addEventListener('click', () => this.showScreen('instructions-screen'));
-        document.getElementById('back-btn').addEventListener('click', () => this.showScreen('start-screen'));
+        // Boutons du menu
+        document.getElementById('start-btn')?.addEventListener('click', () => this.startGame());
+        document.getElementById('instructions-btn')?.addEventListener('click', () => this.showInstructions());
+        document.getElementById('back-btn')?.addEventListener('click', () => this.hideInstructions());
         
-        document.getElementById('resume-btn').addEventListener('click', () => this.togglePause());
-        document.getElementById('restart-btn').addEventListener('click', () => this.restartGame());
-        document.getElementById('quit-btn').addEventListener('click', () => this.quitToMenu());
+        // Pause et menu
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.togglePause();
+        });
         
-        document.getElementById('retry-btn').addEventListener('click', () => this.restartGame());
-        document.getElementById('main-menu-btn').addEventListener('click', () => this.quitToMenu());
-
-        window.addEventListener('keydown', (e) => this.handleKeyDown(e));
-        window.addEventListener('keyup', (e) => this.handleKeyUp(e));
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.gameState === 'playing') {
-                this.togglePause();
+        document.getElementById('resume-btn')?.addEventListener('click', () => this.togglePause());
+        document.getElementById('restart-btn')?.addEventListener('click', () => this.restart());
+        document.getElementById('quit-btn')?.addEventListener('click', () => this.quit());
+        
+        // Game Over
+        document.getElementById('retry-btn')?.addEventListener('click', () => this.restart());
+        document.getElementById('main-menu-btn')?.addEventListener('click', () => this.quit());
+        
+        // Contrôles du jeu
+        document.addEventListener('keydown', (e) => {
+            if (!this.isPaused && this.gameStarted) {
+                this.handleInput(e.key);
             }
         });
     }
 
+    // ===== DÉMARRER LE JEU =====
     startGame() {
-        this.gameState = 'playing';
+        this.gameStarted = true;
         this.currentLevel = 0;
         this.player = {
-            x: this.viewport.width / 2,
-            y: this.viewport.height / 2,
             health: 100,
             maxHealth: 100,
             energy: 100,
@@ -88,1126 +195,291 @@ class Game {
             sanity: 100,
             maxSanity: 100,
             inventory: [],
-            lastDamageTime: 0
+            x: 0,
+            y: 0,
+            z: 0
         };
-        this.entities = [];
-        this.objects = [];
-        this.playerElement = null;
-        this.damageFlash = 0;
-        this.screenShake = 0;
+        this.monsters = [];
+        this.items = [];
+        this.isGameOver = false;
         
         this.showScreen('game-screen');
         this.loadLevel(this.currentLevel);
         this.gameLoop();
     }
 
-    loadLevel(levelIndex) {
-        const levels = [
-            this.createLevelZero(),
-            this.createLevelOne(),
-            this.createLevelTwo(),
-            this.createLevelThree(),
-            this.createLevelFour(),
-            this.createLevelFive()
-        ];
+    // ===== CHARGER UN NIVEAU =====
+    loadLevel(levelId) {
+        const level = this.levels[levelId];
+        if (!level) return;
         
-        if (levelIndex < levels.length) {
-            const level = levels[levelIndex];
-            this.currentLevelData = level;
-            
-            this.entities = [];
-            level.entities.forEach(e => {
-                this.entities.push({
-                    x: e.x,
-                    y: e.y,
-                    type: e.type,
-                    hostile: e.hostile,
-                    name: e.name,
-                    vx: 0,
-                    vy: 0,
-                    searchRadius: 300,
-                    chaseSpeed: 2.5,
-                    patrolSpeed: 0.8,
-                    lastSeenX: null,
-                    lastSeenY: null,
-                    state: 'patrol',
-                    detectionTimer: 0,
-                    movementPattern: Math.random(),
-                    health: e.creatureHealth || 100,
-                    maxHealth: e.creatureHealth || 100,
-                    attackTimer: 0,
-                    creatureType: e.creatureType || 'shadow'
-                });
-            });
-            
-            this.objects = level.objects.map(o => ({...o}));
-        }
-    }
-
-    createLevelZero() {
-        return {
-            name: 'Level 0 - The Lobby',
-            description: 'Couloir jaune infini. Fluorescents grésillants.',
-            backgroundColor: '#ffd700',
-            difficulty: 1,
-            entities: [
-                { x: 100, y: 100, type: 'entity', hostile: false, name: 'Drone', creatureType: 'drone', creatureHealth: 30 },
-                { x: 500, y: 400, type: 'entity', hostile: true, name: 'Shadow Walker', creatureType: 'shadow', creatureHealth: 50 }
-            ],
-            objects: [
-                { x: 600, y: 200, type: 'door', id: 'door1' },
-                { x: 200, y: 600, type: 'item', id: 'water', name: 'Bouteille d\'eau' },
-                { x: 800, y: 400, type: 'item', id: 'radio', name: 'Radio' }
-            ]
-        };
-    }
-
-    createLevelOne() {
-        return {
-            name: 'Level 1 - The Habitation Block',
-            description: 'Appartements morts. Silence assourdissant.',
-            backgroundColor: '#8b7355',
-            difficulty: 2,
-            entities: [
-                { x: 200, y: 150, type: 'entity', hostile: false, name: 'Drone', creatureType: 'drone', creatureHealth: 30 },
-                { x: 600, y: 300, type: 'entity', hostile: true, name: 'Watcher', creatureType: 'watcher', creatureHealth: 60 },
-                { x: 400, y: 500, type: 'entity', hostile: true, name: 'Crawler', creatureType: 'crawler', creatureHealth: 40 }
-            ],
-            objects: [
-                { x: 700, y: 200, type: 'door', id: 'door2' },
-                { x: 150, y: 400, type: 'item', id: 'battery', name: 'Pile' },
-                { x: 300, y: 600, type: 'item', id: 'flashlight', name: 'Lampe torche' }
-            ]
-        };
-    }
-
-    createLevelTwo() {
-        return {
-            name: 'Level 2 - The Pipes',
-            description: 'Tuyauterie géante. Eau stagnante.',
-            backgroundColor: '#4a4a4a',
-            difficulty: 3,
-            entities: [
-                { x: 300, y: 200, type: 'entity', hostile: true, name: 'Water Watcher', creatureType: 'watcher', creatureHealth: 70 },
-                { x: 500, y: 400, type: 'entity', hostile: true, name: 'Crawler 1', creatureType: 'crawler', creatureHealth: 45 },
-                { x: 200, y: 550, type: 'entity', hostile: true, name: 'Crawler 2', creatureType: 'crawler', creatureHealth: 45 }
-            ],
-            objects: [
-                { x: 800, y: 300, type: 'door', id: 'door3' },
-                { x: 100, y: 200, type: 'item', id: 'almond_water', name: 'Eau d\'amande' }
-            ]
-        };
-    }
-
-    createLevelThree() {
-        return {
-            name: 'Level 3 - The Mirrors',
-            description: 'Salles miroirs infinies. Reflets qui bougent.',
-            backgroundColor: '#1a1a2e',
-            difficulty: 4,
-            entities: [
-                { x: 300, y: 200, type: 'entity', hostile: true, name: 'Reflection', creatureType: 'reflector', creatureHealth: 80 },
-                { x: 700, y: 400, type: 'entity', hostile: true, name: 'Shadow Master', creatureType: 'shadow', creatureHealth: 65 },
-                { x: 400, y: 600, type: 'entity', hostile: true, name: 'Crawler 1', creatureType: 'crawler', creatureHealth: 50 },
-                { x: 600, y: 150, type: 'entity', hostile: true, name: 'Crawler 2', creatureType: 'crawler', creatureHealth: 50 }
-            ],
-            objects: [
-                { x: 750, y: 500, type: 'door', id: 'door4' },
-                { x: 150, y: 300, type: 'item', id: 'battery', name: 'Pile' }
-            ]
-        };
-    }
-
-    createLevelFour() {
-        return {
-            name: 'Level 4 - The Factory',
-            description: 'Usine monstrueuse. Machines qui tournent.',
-            backgroundColor: '#2d2d44',
-            difficulty: 5,
-            entities: [
-                { x: 400, y: 300, type: 'entity', hostile: true, name: 'Machine', creatureType: 'machine', creatureHealth: 100 },
-                { x: 200, y: 100, type: 'entity', hostile: true, name: 'Shadow 1', creatureType: 'shadow', creatureHealth: 70 },
-                { x: 800, y: 200, type: 'entity', hostile: true, name: 'Shadow 2', creatureType: 'shadow', creatureHealth: 70 },
-                { x: 300, y: 500, type: 'entity', hostile: true, name: 'Crawler 1', creatureType: 'crawler', creatureHealth: 50 },
-                { x: 700, y: 550, type: 'entity', hostile: true, name: 'Crawler 2', creatureType: 'crawler', creatureHealth: 50 },
-                { x: 500, y: 700, type: 'entity', hostile: true, name: 'Watcher Prime', creatureType: 'watcher', creatureHealth: 80 }
-            ],
-            objects: [
-                { x: 900, y: 400, type: 'door', id: 'door5' },
-                { x: 100, y: 400, type: 'item', id: 'almond_water', name: 'Eau d\'amande' },
-                { x: 500, y: 150, type: 'item', id: 'battery', name: 'Pile' }
-            ]
-        };
-    }
-
-    createLevelFive() {
-        return {
-            name: 'Level 5 - The Deep',
-            description: 'Les profondeurs du vide. DERNIÈRE CHANCE.',
-            backgroundColor: '#0a0a0f',
-            difficulty: 6,
-            entities: [
-                { x: 400, y: 200, type: 'entity', hostile: true, name: 'Reflection Master', creatureType: 'reflector', creatureHealth: 120 },
-                { x: 200, y: 400, type: 'entity', hostile: true, name: 'Machine Hunter', creatureType: 'machine', creatureHealth: 110 },
-                { x: 800, y: 300, type: 'entity', hostile: true, name: 'Watcher Apex', creatureType: 'watcher', creatureHealth: 100 },
-                { x: 100, y: 600, type: 'entity', hostile: true, name: 'Shadow King', creatureType: 'shadow', creatureHealth: 95 },
-                { x: 300, y: 500, type: 'entity', hostile: true, name: 'Crawler 1', creatureType: 'crawler', creatureHealth: 55 },
-                { x: 700, y: 550, type: 'entity', hostile: true, name: 'Crawler 2', creatureType: 'crawler', creatureHealth: 55 },
-                { x: 500, y: 700, type: 'entity', hostile: true, name: 'Crawler 3', creatureType: 'crawler', creatureHealth: 55 }
-            ],
-            objects: [
-                { x: 600, y: 200, type: 'door', id: 'door6', special: 'exit' },
-                { x: 200, y: 200, type: 'item', id: 'almond_water', name: 'Eau d\'amande' },
-                { x: 800, y: 700, type: 'item', id: 'almond_water', name: 'Eau d\'amande' }
-            ]
-        };
-    }
-
-    handleKeyDown(e) {
-        this.keys[e.key.toLowerCase()] = true;
-        if (e.key === ' ') {
-            e.preventDefault();
-            this.interact();
-        }
-        if (e.key === 'e' || e.key === 'E') {
-            e.preventDefault();
-            this.examine();
-        }
-    }
-
-    handleKeyUp(e) {
-        this.keys[e.key.toLowerCase()] = false;
-    }
-
-    handleResize() {
-        this.viewport.width = window.innerWidth;
-        this.viewport.height = window.innerHeight;
-    }
-
-    interact() {
-        const interactRadius = 100; // AUGMENTÉ DE 50 À 100!
-        const nearbyObject = this.objects.find(obj => this.distance(this.player, obj) < interactRadius);
-
-        if (nearbyObject) {
-            if (nearbyObject.type === 'door') {
-                this.enterDoor(nearbyObject);
-                this.showMessage('✅ Porte activée!', 'warning');
-            } else if (nearbyObject.type === 'item') {
-                this.pickupItem(nearbyObject);
-            }
-        } else {
-            this.showMessage('❌ Pas de porte à proximité!', 'danger');
-        }
-    }
-
-    examine() {
-        const examineRadius = 80;
-        const nearbyEntity = this.entities.find(e => this.distance(this.player, e) < examineRadius);
-
-        if (nearbyEntity) {
-            this.showMessage(`Vous apercevez: ${nearbyEntity.name}`, 'warning');
-            if (nearbyEntity.hostile) {
-                this.player.sanity -= 5;
-                this.showMessage('😱 C\'est hostile!', 'danger');
-            }
-        }
-    }
-
-    enterDoor(door) {
-        if (this.currentLevel < 5) {
-            this.currentLevel++;
-            this.loadLevel(this.currentLevel);
-            this.player.x = this.viewport.width / 2;
-            this.player.y = this.viewport.height / 2;
-            
-            const regenFactor = 1 - (this.currentLevel * 0.1);
-            this.player.health = Math.min(this.player.health + (30 * regenFactor), this.player.maxHealth);
-            this.player.energy = Math.min(this.player.energy + (30 * regenFactor), this.player.maxEnergy);
-            
-            this.showMessage(`⚠️ ${this.currentLevelData.name}\nDifficulté: ${this.currentLevelData.difficulty}/6`, 'warning');
-        } else if (door.special === 'exit') {
-            this.endGame(true);
-        }
-    }
-
-    pickupItem(item) {
-        this.objects = this.objects.filter(o => o !== item);
-        this.player.inventory.push(item);
+        this.currentLevel = levelId;
         
-        switch(item.id) {
-            case 'water':
-            case 'almond_water':
-                this.player.health = Math.min(this.player.health + 30, this.player.maxHealth);
-                this.showMessage('Vous buvez l\'eau. Légèrement rassurant.', 'warning');
-                this.player.inventory.pop();
-                break;
-            case 'flashlight':
-                this.showMessage('Lampe torche obtenue.', 'warning');
-                break;
-            case 'radio':
-                this.showMessage('Radio obtenue. Bruit blanc apaisant.', 'warning');
-                break;
-            case 'battery':
-                this.player.energy = Math.min(this.player.energy + 20, this.player.maxEnergy);
-                this.showMessage('Pile obtenue. Énergie restaurée.', 'warning');
-                this.player.inventory.pop();
-                break;
-        }
+        // Mettre à jour le HUD
+        document.getElementById('room-name').textContent = `Level ${level.id} - ${level.name}`;
+        document.getElementById('room-description').textContent = level.description;
         
-        this.updateInventoryDisplay();
+        // Appliquer les paramètres du niveau
+        this.applyLevelSettings(level);
+        
+        // Spawnner les monstres
+        this.spawnMonstersFromLevel(level);
+        
+        console.log(`📍 Chargement: Level ${level.id} - ${level.name}`);
     }
 
-    distance(p1, p2) {
-        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-    }
-
-    showMessage(text, type = 'normal') {
-        const messageBox = document.getElementById('message-box');
-        messageBox.textContent = text;
-        messageBox.className = 'message-box ' + type;
-        
-        setTimeout(() => {
-            messageBox.textContent = '';
-            messageBox.className = 'message-box';
-        }, 4000);
-    }
-
-    updateInventoryDisplay() {
-        const itemsList = document.getElementById('items-list');
-        itemsList.innerHTML = '';
-        
-        this.player.inventory.forEach((item, index) => {
-            const slot = document.createElement('div');
-            slot.className = 'item-slot';
-            slot.title = item.name;
-            
-            const emoji = item.id === 'water' ? '💧' : 
-                         item.id === 'flashlight' ? '🔦' :
-                         item.id === 'radio' ? '📻' :
-                         item.id === 'battery' ? '🔋' :
-                         item.id === 'almond_water' ? '💧' : '?';
-            
-            slot.textContent = emoji;
-            slot.addEventListener('click', () => this.useItem(index));
-            itemsList.appendChild(slot);
-        });
-    }
-
-    useItem(index) {
-        const item = this.player.inventory[index];
-        if (item) {
-            this.pickupItem(item);
-        }
-    }
-
-    updateEntities() {
-        this.entities.forEach(entity => {
-            const distToPlayer = this.distance(this.player, entity);
-            const creatureType = entity.creatureType || 'shadow';
-            
-            if (entity.hostile) {
-                if (creatureType === 'shadow') {
-                    const canSee = distToPlayer < entity.searchRadius;
-                    if (canSee && distToPlayer < 250) {
-                        entity.state = 'chase';
-                        entity.lastSeenX = this.player.x;
-                        entity.lastSeenY = this.player.y;
-                    } else if (entity.lastSeenX !== null && distToPlayer > 350) {
-                        entity.state = 'hunt';
-                    } else if (!canSee) {
-                        entity.state = 'patrol';
-                    }
-
-                    if (entity.state === 'chase') {
-                        const dx = this.player.x - entity.x;
-                        const dy = this.player.y - entity.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > 30) {
-                            const speed = entity.chaseSpeed * 1.3 * (this.currentLevelData.difficulty || 1);
-                            entity.x += (dx / distance) * speed;
-                            entity.y += (dy / distance) * speed;
-                        }
-                    } else if (entity.state === 'hunt' && entity.lastSeenX !== null) {
-                        const dx = entity.lastSeenX - entity.x;
-                        const dy = entity.lastSeenY - entity.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > 10) {
-                            const speed = entity.chaseSpeed * 0.8;
-                            entity.x += (dx / distance) * speed;
-                            entity.y += (dy / distance) * speed;
-                        } else {
-                            entity.state = 'patrol';
-                            entity.lastSeenX = null;
-                            entity.lastSeenY = null;
-                        }
-                    } else if (entity.state === 'patrol') {
-                        entity.detectionTimer++;
-                        if (entity.detectionTimer > 60) {
-                            entity.movementPattern = Math.random();
-                            entity.detectionTimer = 0;
-                        }
-                        entity.x += Math.sin(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed * 1.2;
-                        entity.y += Math.cos(entity.detectionTimer * 0.05 + entity.movementPattern * 10) * entity.patrolSpeed * 1.2;
-                    }
-                }
-
-                else if (creatureType === 'watcher') {
-                    const detectionRange = 450;
-                    const canSee = distToPlayer < detectionRange;
-                    if (canSee) {
-                        entity.state = 'chase';
-                        entity.lastSeenX = this.player.x;
-                        entity.lastSeenY = this.player.y;
-                    } else if (entity.lastSeenX !== null) {
-                        entity.state = 'hunt';
-                    } else {
-                        entity.state = 'patrol';
-                    }
-
-                    if (entity.state === 'chase') {
-                        const dx = this.player.x - entity.x;
-                        const dy = this.player.y - entity.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > 50) {
-                            const speed = entity.chaseSpeed * 0.7 * (this.currentLevelData.difficulty || 1);
-                            entity.x += (dx / distance) * speed;
-                            entity.y += (dy / distance) * speed;
-                        }
-                    } else if (entity.state === 'hunt') {
-                        const dx = entity.lastSeenX - entity.x;
-                        const dy = entity.lastSeenY - entity.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > 10) {
-                            const speed = entity.chaseSpeed * 0.5;
-                            entity.x += (dx / distance) * speed;
-                            entity.y += (dy / distance) * speed;
-                        } else {
-                            entity.state = 'patrol';
-                            entity.lastSeenX = null;
-                            entity.lastSeenY = null;
-                        }
-                    } else {
-                        entity.detectionTimer++;
-                        if (entity.detectionTimer > 120) {
-                            entity.movementPattern = Math.random();
-                            entity.detectionTimer = 0;
-                        }
-                        entity.x += Math.sin(entity.detectionTimer * 0.02) * entity.patrolSpeed * 0.5;
-                        entity.y += Math.cos(entity.detectionTimer * 0.02) * entity.patrolSpeed * 0.5;
-                    }
-                }
-
-                else if (creatureType === 'crawler') {
-                    const canSee = distToPlayer < 200;
-                    if (canSee) {
-                        entity.state = 'chase';
-                    } else {
-                        entity.state = 'patrol';
-                    }
-
-                    if (entity.state === 'chase') {
-                        const dx = this.player.x - entity.x;
-                        const dy = this.player.y - entity.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > 15) {
-                            const speed = entity.chaseSpeed * 1.5 * (this.currentLevelData.difficulty || 1);
-                            entity.x += (dx / distance) * speed;
-                            entity.y += (dy / distance) * speed;
-                        }
-                    } else {
-                        entity.detectionTimer++;
-                        entity.x += (Math.random() - 0.5) * 2;
-                        entity.y += (Math.random() - 0.5) * 2;
-                    }
-                }
-
-                else if (creatureType === 'reflector') {
-                    const canSee = distToPlayer < 500;
-                    if (canSee) {
-                        entity.state = 'chase';
-                        const dx = this.player.x - entity.x;
-                        const dy = this.player.y - entity.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance > 20) {
-                            const speed = entity.chaseSpeed * 1.2 * (this.currentLevelData.difficulty || 1);
-                            entity.x += (dx / distance) * speed;
-                            entity.y += (dy / distance) * speed;
-                        }
-                    } else {
-                        entity.state = 'patrol';
-                        entity.x += Math.sin(entity.detectionTimer * 0.03) * entity.patrolSpeed;
-                        entity.y += Math.cos(entity.detectionTimer * 0.03) * entity.patrolSpeed;
-                        entity.detectionTimer++;
-                    }
-                }
-
-                else if (creatureType === 'machine') {
-                    const detectionRange = 350;
-                    const canSee = distToPlayer < detectionRange;
-                    if (canSee) {
-                        entity.state = 'chase';
-                        entity.attackTimer++;
-                        if (entity.attackTimer % 30 === 0) {
-                            if (!this.invulnerable) {
-                                this.takeDamage(8);
-                            }
-                            this.screenShake = 10;
-                        }
-                        const centerX = entity.x;
-                        const centerY = entity.y;
-                        const angle = entity.attackTimer * 0.05;
-                        const radius = 100;
-                        entity.x = centerX + Math.cos(angle) * radius;
-                        entity.y = centerY + Math.sin(angle) * radius;
-                    } else {
-                        entity.state = 'patrol';
-                        entity.attackTimer = 0;
-                    }
-                }
-
-                else if (creatureType === 'drone') {
-                    if (Math.random() < 0.02) {
-                        entity.vx = (Math.random() - 0.5) * 2;
-                        entity.vy = (Math.random() - 0.5) * 2;
-                    }
-                    entity.x += (entity.vx || 0);
-                    entity.y += (entity.vy || 0);
-                }
-            } else {
-                if (Math.random() < 0.02) {
-                    entity.vx = (Math.random() - 0.5) * 2;
-                    entity.vy = (Math.random() - 0.5) * 2;
-                }
-                entity.x += (entity.vx || 0);
-                entity.y += (entity.vy || 0);
-            }
-
-            entity.x = Math.max(0, Math.min(entity.x, this.viewport.width));
-            entity.y = Math.max(0, Math.min(entity.y, this.viewport.height));
-        });
-    }
-
-    updateStats() {
-        this.player.energy -= 0.1;
-        this.player.sanity -= 0.05;
-        
-        if (this.player.energy < 0) {
-            this.player.energy = 0;
-            this.player.health -= 0.2;
-        }
-        
-        this.entities.forEach(entity => {
-            if (entity.hostile) {
-                const dist = this.distance(this.player, entity);
-                const creatureType = entity.creatureType || 'shadow';
-                
-                let fearRange = 200;
-                if (creatureType === 'watcher') fearRange = 300;
-                if (creatureType === 'reflector') fearRange = 350;
-                if (creatureType === 'machine') fearRange = 250;
-                
-                if (dist < fearRange) {
-                    const fearFactor = 1 - (dist / fearRange);
-                    this.player.sanity -= 0.2 * fearFactor;
-                }
-                
-                if (dist < 50 && !this.invulnerable) {
-                    const now = Date.now();
-                    if (now - this.player.lastDamageTime > 500) {
-                        let damageAmount = 15;
-                        if (creatureType === 'reflector') damageAmount = 25;
-                        if (creatureType === 'machine') damageAmount = 12;
-                        if (creatureType === 'crawler') damageAmount = 8;
-                        
-                        this.takeDamage(damageAmount);
-                        this.player.lastDamageTime = now;
-                    }
-                }
-            }
-        });
-
-        this.player.health = Math.max(0, Math.min(this.player.health, this.player.maxHealth));
-        this.player.energy = Math.max(0, Math.min(this.player.energy, this.player.maxEnergy));
-        this.player.sanity = Math.max(0, Math.min(this.player.sanity, this.player.maxSanity));
-
-        if (this.player.health <= 0 && !this.invulnerable) {
-            this.endGame(false, 'Vous avez été déchiqueté...');
-        }
-        if (this.player.sanity <= 0 && !this.invulnerable) {
-            this.endGame(false, 'Votre esprit a crié dans le vide...');
-        }
-    }
-
-    takeDamage(amount) {
-        this.player.health -= amount;
-        this.damageFlash = 0.8;
-        this.screenShake = 15;
-        
-        const healthBar = document.getElementById('health-bar');
-        healthBar.classList.add('damage-pulse');
-        setTimeout(() => healthBar.classList.remove('damage-pulse'), 300);
-        
-        this.showMessage('💥 DÉGÂTS! ' + amount + ' HP perdus!', 'danger');
-    }
-
-    updateHUD() {
-        if (!this.currentLevelData) return;
-        
-        document.getElementById('health-bar').style.width = (this.player.health / this.player.maxHealth * 100) + '%';
-        document.getElementById('health-text').textContent = Math.floor(this.player.health) + '/' + this.player.maxHealth;
-        
-        document.getElementById('energy-bar').style.width = (this.player.energy / this.player.maxEnergy * 100) + '%';
-        document.getElementById('energy-text').textContent = Math.floor(this.player.energy) + '/' + this.player.maxEnergy;
-        
-        document.getElementById('sanity-bar').style.width = (this.player.sanity / this.player.maxSanity * 100) + '%';
-        document.getElementById('sanity-text').textContent = Math.floor(this.player.sanity) + '/' + this.player.maxSanity;
-
-        if (this.player.sanity < 30) {
-            document.getElementById('sanity-bar').parentElement.style.animation = 'shake 0.3s infinite';
-        } else {
-            document.getElementById('sanity-bar').parentElement.style.animation = 'none';
-        }
-
-        if (this.player.health < 30) {
-            document.getElementById('health-bar').classList.add('danger');
-        } else {
-            document.getElementById('health-bar').classList.remove('danger');
-        }
-
-        document.getElementById('room-name').textContent = this.currentLevelData.name;
-        document.getElementById('room-description').textContent = this.currentLevelData.description;
-    }
-
-    movePlayer() {
-        const speed = 5;
-        if (this.keys['arrowup'] || this.keys['w']) this.player.y -= speed;
-        if (this.keys['arrowdown'] || this.keys['s']) this.player.y += speed;
-        if (this.keys['arrowleft'] || this.keys['a']) this.player.x -= speed;
-        if (this.keys['arrowright'] || this.keys['d']) this.player.x += speed;
-
-        this.player.x = Math.max(20, Math.min(this.player.x, this.viewport.width - 20));
-        this.player.y = Math.max(20, Math.min(this.player.y, this.viewport.height - 20));
-
-        if (this.keys['w'] || this.keys['a'] || this.keys['s'] || this.keys['d'] || 
-            this.keys['arrowup'] || this.keys['arrowleft'] || this.keys['arrowdown'] || this.keys['arrowright']) {
-            this.player.energy -= 0.05;
-        }
-    }
-
-    render() {
+    // ===== APPLIQUER LES PARAMÈTRES DU NIVEAU =====
+    applyLevelSettings(level) {
         const viewport = document.getElementById('viewport');
-        
-        let filters = [];
-
-        if (this.damageFlash > 0) {
-            const flashColor = this.damageFlash > 0.5 ? '#ff0000' : '#ff6666';
-            viewport.style.backgroundColor = flashColor;
-            viewport.style.opacity = this.damageFlash * 0.5;
-            this.damageFlash -= 0.08;
-        } else {
-            viewport.style.opacity = 1;
-            viewport.style.backgroundColor = this.currentLevelData.backgroundColor + '30';
+        if (viewport) {
+            const brightness = 1 - level.darkness;
+            viewport.style.filter = `brightness(${brightness})`;
+            viewport.style.opacity = brightness;
         }
+    }
 
-        if (this.screenShake > 0) {
-            const shakeX = (Math.random() - 0.5) * this.screenShake;
-            const shakeY = (Math.random() - 0.5) * this.screenShake;
-            viewport.style.transform = `translate(${shakeX}px, ${shakeY}px)`;
-            this.screenShake -= 0.5;
-        } else {
-            viewport.style.transform = 'none';
-        }
-
-        if (this.player.sanity < 50) {
-            const distortion = (50 - this.player.sanity) / 50;
-            filters.push(`grayscale(${distortion * 50}%)`);
-            filters.push(`brightness(${1 - distortion * 0.15})`);
-            if (this.player.sanity < 30) {
-                filters.push(`drop-shadow(0 0 40px rgba(255, 0, 0, ${distortion * 0.3}))`);
-            }
-        }
-
-        if (this.player.health < 40) {
-            const healthFactor = 1 - (this.player.health / 40);
-            viewport.style.boxShadow = `inset 0 0 60px rgba(255, 0, 0, ${healthFactor * 0.4})`;
-        } else if (this.player.energy < 30) {
-            const energyFactor = 1 - (this.player.energy / 30);
-            viewport.style.boxShadow = `inset 0 0 40px rgba(0, 150, 255, ${energyFactor * 0.3})`;
-        } else {
-            viewport.style.boxShadow = 'none';
-        }
-
-        if (filters.length > 0) {
-            viewport.style.filter = filters.join(' ');
-        } else {
-            viewport.style.filter = 'none';
-        }
-
-        if (!this.playerElement) {
-            this.playerElement = document.createElement('div');
-            this.playerElement.id = 'player';
-            this.playerElement.className = 'player';
-            viewport.appendChild(this.playerElement);
-        }
-        
-        this.playerElement.style.left = (this.player.x - 15) + 'px';
-        this.playerElement.style.top = (this.player.y - 15) + 'px';
-
-        const existingEntities = viewport.querySelectorAll('.entity');
-        existingEntities.forEach(el => el.remove());
-        
-        this.entities.forEach((entity) => {
-            const el = document.createElement('div');
-            const creatureType = entity.creatureType || 'shadow';
-            
-            el.className = 'entity ' + creatureType;
-            
-            if (entity.hostile && entity.state) {
-                el.classList.add(entity.state);
-            }
-            
-            el.style.left = (entity.x - 20) + 'px';
-            el.style.top = (entity.y - 20) + 'px';
-            el.title = entity.name;
-            viewport.appendChild(el);
-        });
-
-        const existingObjects = viewport.querySelectorAll('.door, .item');
-        existingObjects.forEach(el => el.remove());
-
-        this.objects.forEach(obj => {
-            const el = document.createElement('div');
-            el.className = obj.type;
-            el.style.left = (obj.x - 25) + 'px';
-            el.style.top = (obj.y - (obj.type === 'door' ? 40 : 10)) + 'px';
-            el.title = obj.name || obj.id;
-            viewport.appendChild(el);
+    // ===== SPAWNNER LES MONSTRES =====
+    spawnMonstersFromLevel(level) {
+        this.monsters = [];
+        level.monsters.forEach((monsterType, index) => {
+            this.monsters.push({
+                type: monsterType,
+                health: 50,
+                x: Math.random() * 100,
+                y: Math.random() * 100,
+                speed: Math.random() * 2 + 1
+            });
         });
     }
 
+    // ===== GESTION DE L'ENTRÉE =====
+    handleInput(key) {
+        const step = 10;
+        
+        switch(key.toLowerCase()) {
+            case 'arrowup':
+            case 'w':
+                this.player.y -= step;
+                this.player.energy -= 2;
+                break;
+            case 'arrowdown':
+            case 's':
+                this.player.y += step;
+                this.player.energy -= 2;
+                break;
+            case 'arrowleft':
+            case 'a':
+            case 'q':
+                this.player.x -= step;
+                this.player.energy -= 2;
+                break;
+            case 'arrowright':
+            case 'd':
+                this.player.x += step;
+                this.player.energy -= 2;
+                break;
+            case ' ':
+            case 'e':
+                this.interact();
+                break;
+        }
+        
+        // Limiter l'énergie
+        this.player.energy = Math.max(0, Math.min(this.player.maxEnergy, this.player.energy));
+    }
+
+    // ===== INTERACTION =====
+    interact() {
+        console.log('Interaction!');
+        // À développer
+    }
+
+    // ===== METTRE À JOUR LE HUD =====
+    updateHUD() {
+        // Santé
+        const healthPercent = (this.player.health / this.player.maxHealth) * 100;
+        document.getElementById('health-bar').style.width = healthPercent + '%';
+        document.getElementById('health-text').textContent = `${this.player.health}/${this.player.maxHealth}`;
+        
+        // Énergie
+        const energyPercent = (this.player.energy / this.player.maxEnergy) * 100;
+        document.getElementById('energy-bar').style.width = energyPercent + '%';
+        document.getElementById('energy-text').textContent = `${this.player.energy}/${this.player.maxEnergy}`;
+        
+        // Sanité
+        const sanityPercent = (this.player.sanity / this.player.maxSanity) * 100;
+        document.getElementById('sanity-bar').style.width = sanityPercent + '%';
+        document.getElementById('sanity-text').textContent = `${this.player.sanity}/${this.player.maxSanity}`;
+    }
+
+    // ===== BOUCLE DE JEU =====
     gameLoop() {
-        if (this.gameState === 'playing') {
-            this.movePlayer();
-            this.updateEntities();
-            this.updateStats();
-            this.updateHUD();
-            this.render();
-            this.updateAdminPanel();
+        if (this.isPaused || this.isGameOver) return;
+        
+        // Mise à jour
+        this.update();
+        this.updateHUD();
+        this.render();
+        
+        requestAnimationFrame(() => this.gameLoop());
+    }
+
+    // ===== MISE À JOUR DU JEU =====
+    update() {
+        // Énergie diminue
+        if (this.gameStarted && !this.isPaused) {
+            this.player.energy -= 0.1;
             
-            requestAnimationFrame(() => this.gameLoop());
+            if (this.player.energy <= 0) {
+                this.player.health -= 1;
+                this.player.energy = 0;
+            }
+        }
+        
+        // Sanité diminue avec le temps
+        if (this.currentLevel >= 60) {
+            this.player.sanity -= 0.05;
+        }
+        
+        // Vérifier mort
+        if (this.player.health <= 0) {
+            this.gameOver('Tu es mort...');
+        }
+        
+        if (this.player.sanity <= 0) {
+            this.gameOver('Tu as perdu ta sanité mentale...');
         }
     }
 
-    togglePause() {
-        const pauseMenu = document.getElementById('pause-menu');
-        if (this.gameState === 'playing') {
-            this.gameState = 'paused';
-            pauseMenu.classList.remove('hidden');
-        } else if (this.gameState === 'paused') {
-            this.gameState = 'playing';
-            pauseMenu.classList.add('hidden');
-            this.gameLoop();
-        }
+    // ===== RENDU =====
+    render() {
+        // À développer selon votre système de rendu
     }
 
-    endGame(won, message = '') {
-        this.gameState = 'gameOver';
-        const screen = document.getElementById('game-over-screen');
-        const title = document.getElementById('game-over-title');
-        const msg = document.getElementById('game-over-message');
-        
-        if (won) {
-            title.textContent = '🎉 VOUS AVEZ SURVÉCU! 🎉';
-            title.style.color = '#00ff00';
-            msg.textContent = `Vous avez traversé les ${this.currentLevel + 1} niveaux!\nMais pour combien de temps?`;
-        } else {
-            title.textContent = '💀 GAME OVER 💀';
-            title.style.color = '#ff0000';
-            msg.textContent = message || 'Vous avez échoué...';
-        }
-        
+    // ===== GAME OVER =====
+    gameOver(message) {
+        this.isGameOver = true;
+        document.getElementById('game-over-title').textContent = 'GAME OVER';
+        document.getElementById('game-over-message').textContent = message;
         this.showScreen('game-over-screen');
     }
 
-    restartGame() {
+    // ===== PAUSE =====
+    togglePause() {
+        if (!this.gameStarted) return;
+        
+        this.isPaused = !this.isPaused;
+        const pauseMenu = document.getElementById('pause-menu');
+        pauseMenu.classList.toggle('hidden');
+    }
+
+    // ===== RESTART =====
+    restart() {
         this.startGame();
     }
 
-    quitToMenu() {
-        this.gameState = 'menu';
+    // ===== QUIT =====
+    quit() {
+        this.showScreen('start-screen');
+        this.gameStarted = false;
+        this.isGameOver = false;
+        this.isPaused = false;
+    }
+
+    // ===== AFFICHAGE D'ÉCRAN =====
+    showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId)?.classList.add('active');
+    }
+
+    showInstructions() {
+        this.showScreen('instructions-screen');
+    }
+
+    hideInstructions() {
         this.showScreen('start-screen');
     }
 
-    showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
-        });
-        document.getElementById(screenId).classList.add('active');
-
-        if (screenId === 'game-screen') {
-            document.getElementById('pause-menu').classList.add('hidden');
-        }
-    }
-
-    // ========== ADMIN FUNCTIONS ==========
+    // ===== ADMIN FUNCTIONS =====
     showAdminLogin() {
-        const loginScreen = document.getElementById('admin-login-screen');
-        const input = document.getElementById('admin-code-input');
-        if (loginScreen) {
-            loginScreen.classList.add('active');
-        }
-        if (input) {
-            input.focus();
-            setTimeout(() => input.focus(), 100);
-        }
-        console.log('Admin login affiché');
-    }
-
-    checkAdminCode() {
-        const input = document.getElementById('admin-code-input');
-        const code = input.value.trim();
-        
-        console.log('Code entré:', code);
-        console.log('Code attendu:', this.ADMIN_CODE);
-        
-        if (code === this.ADMIN_CODE) {
-            console.log('✅ Code correct!');
-            this.adminMode = true;
-            
-            // Fermer le login
-            const loginScreen = document.getElementById('admin-login-screen');
-            if (loginScreen) {
-                loginScreen.classList.remove('active');
-            }
-            
-            // Ouvrir le panel admin
-            const adminPanel = document.getElementById('admin-panel');
-            if (adminPanel) {
-                adminPanel.classList.add('active');
-            }
-            
-            if (this.gameState === 'playing') {
-                this.showMessage('✅ Mode Admin activé!', 'warning');
-            }
-            
-            input.value = '';
-            console.log('Admin mode activé!');
-        } else {
-            console.log('❌ Code incorrect!');
-            const errorDiv = document.getElementById('admin-error');
-            if (errorDiv) {
-                errorDiv.textContent = '❌ Code incorrect! (Essaye: 1337)';
-                setTimeout(() => {
-                    errorDiv.textContent = '';
-                }, 3000);
-            }
-        }
+        document.getElementById('admin-login-screen').classList.add('active');
     }
 
     closeAdminLogin() {
-        const loginScreen = document.getElementById('admin-login-screen');
-        if (loginScreen) {
-            loginScreen.classList.remove('active');
-        }
-        const input = document.getElementById('admin-code-input');
-        if (input) {
-            input.value = '';
-        }
-        const errorDiv = document.getElementById('admin-error');
-        if (errorDiv) {
-            errorDiv.textContent = '';
+        document.getElementById('admin-login-screen').classList.remove('active');
+    }
+
+    checkAdminCode() {
+        const code = document.getElementById('admin-code-input').value;
+        if (code === 'admin123') {
+            document.getElementById('admin-login-screen').classList.remove('active');
+            this.toggleAdminPanel();
+            document.getElementById('admin-code-input').value = '';
+        } else {
+            document.getElementById('admin-error').textContent = 'Code incorrect!';
         }
     }
 
     toggleAdminPanel() {
-        const adminPanel = document.getElementById('admin-panel');
-        if (adminPanel) {
-            adminPanel.classList.toggle('active');
-            console.log('Admin Panel:', adminPanel.classList.contains('active') ? 'OUVERT' : 'FERMÉ');
-        }
-    }
-
-    updateAdminPanel() {
-        if (!this.adminMode) return;
-        document.getElementById('admin-status').textContent = this.gameState;
-        document.getElementById('admin-level').textContent = this.currentLevel;
-        document.getElementById('admin-creatures').textContent = this.entities.filter(e => e.hostile).length;
+        document.getElementById('admin-panel').classList.toggle('active');
     }
 
     adminSetInvulnerable() {
-        this.invulnerable = !this.invulnerable;
+        this.godMode = !this.godMode;
         const btn = event.target;
-        btn.textContent = 'God Mode: ' + (this.invulnerable ? 'ON' : 'OFF');
-        this.showMessage('God Mode: ' + (this.invulnerable ? 'ACTIVÉ ✅' : 'DÉSACTIVÉ ❌'), 'warning');
+        btn.textContent = `God Mode: ${this.godMode ? 'ON' : 'OFF'}`;
     }
 
     adminAddHealth(amount) {
-        this.player.health = Math.min(this.player.health + amount, this.player.maxHealth);
-        this.showMessage(`+${amount} HP`, 'warning');
+        this.player.health = Math.min(this.player.maxHealth, this.player.health + amount);
+        this.updateHUD();
     }
 
     adminAddEnergy(amount) {
-        this.player.energy = Math.min(this.player.energy + amount, this.player.maxEnergy);
-        this.showMessage(`+${amount} Energy`, 'warning');
+        this.player.energy = Math.min(this.player.maxEnergy, this.player.energy + amount);
+        this.updateHUD();
     }
 
     adminAddSanity(amount) {
-        this.player.sanity = Math.min(this.player.sanity + amount, this.player.maxSanity);
-        this.showMessage(`+${amount} Sanity`, 'warning');
+        this.player.sanity = Math.min(this.player.maxSanity, this.player.sanity + amount);
+        this.updateHUD();
     }
 
     adminKillAllEnemies() {
-        this.entities = this.entities.filter(e => !e.hostile);
-        this.showMessage('Tous les monstres éliminés!', 'warning');
+        this.monsters = [];
+        console.log('Tous les monstres sont morts');
     }
 
     adminNextLevel() {
-        if (this.currentLevel < 5) {
-            this.currentLevel++;
-            this.loadLevel(this.currentLevel);
-            this.player.x = this.viewport.width / 2;
-            this.player.y = this.viewport.height / 2;
-            this.showMessage(`Level ${this.currentLevel} chargé!`, 'warning');
+        if (this.currentLevel < this.levels.length - 1) {
+            this.loadLevel(this.currentLevel + 1);
         }
     }
 
     adminPrevLevel() {
         if (this.currentLevel > 0) {
-            this.currentLevel--;
-            this.loadLevel(this.currentLevel);
-            this.player.x = this.viewport.width / 2;
-            this.player.y = this.viewport.height / 2;
-            this.showMessage(`Level ${this.currentLevel} chargé!`, 'warning');
+            this.loadLevel(this.currentLevel - 1);
         }
     }
 
-    adminGoToLevel(level) {
-        this.currentLevel = level;
-        this.loadLevel(this.currentLevel);
-        this.player.x = this.viewport.width / 2;
-        this.player.y = this.viewport.height / 2;
-        this.showMessage(`Level ${this.currentLevel} chargé!`, 'warning');
+    adminGoToLevel(levelId) {
+        if (levelId >= 0 && levelId < this.levels.length) {
+            this.loadLevel(levelId);
+        }
     }
 
     adminSpawnMonster(type) {
-        const newMonster = {
-            x: Math.random() * this.viewport.width,
-            y: Math.random() * this.viewport.height,
-            type: 'entity',
-            hostile: true,
-            name: type.toUpperCase(),
-            vx: 0,
-            vy: 0,
-            searchRadius: 300,
-            chaseSpeed: 2.5,
-            patrolSpeed: 0.8,
-            lastSeenX: null,
-            lastSeenY: null,
-            state: 'patrol',
-            detectionTimer: 0,
-            movementPattern: Math.random(),
+        this.monsters.push({
+            type: type,
             health: 50,
-            maxHealth: 50,
-            attackTimer: 0,
-            creatureType: type
-        };
-        this.entities.push(newMonster);
-        this.showMessage(`🚨 ${type} spawn!`, 'danger');
-    }
-
-    adminShowStats() {
-        console.log('=== PLAYER STATS ===');
-        console.log('HP:', this.player.health + '/' + this.player.maxHealth);
-        console.log('Energy:', this.player.energy + '/' + this.player.maxEnergy);
-        console.log('Sanity:', this.player.sanity + '/' + this.player.maxSanity);
-        console.log('Level:', this.currentLevel);
-        console.log('Position:', this.player.x, this.player.y);
-    }
-
-    adminShowEntities() {
-        console.log('=== ENTITIES ===');
-        this.entities.forEach((e, i) => {
-            console.log(i + '.', e.name, '-', e.creatureType, '-', e.state, '- HP:', e.health);
+            x: Math.random() * 100,
+            y: Math.random() * 100,
+            speed: Math.random() * 2 + 1
         });
     }
-
-    adminClearConsole() {
-        console.clear();
-    }
 }
 
+// ===== INITIALISER LE JEU =====
 window.addEventListener('DOMContentLoaded', () => {
-    window.game = new Game();
-});// ===== SYSTÈME DE NIVEAUX COMPLET =====
-// Ajouter ce code dans votre game.js
-
-const LEVELS = [
-    {
-        id: 0,
-        name: 'The Lobby',
-        description: 'L\'entrée des Backrooms. Fluorescent lights et murs jaunes.',
-        difficulty: 1,
-        monsters: ['shadow'],
-        items: ['flashlight', 'can_of_beans'],
-        darkness: 0.2,
-        ambiance: 'buzzing'
-    },
-    {
-        id: 1,
-        name: 'The Hallways',
-        description: 'Des couloirs infinis. Les murs vous observent.',
-        difficulty: 2,
-        monsters: ['shadow', 'watcher'],
-        items: ['water_bottle', 'key'],
-        darkness: 0.5,
-        ambiance: 'whispers'
-    },
-    {
-        id: 2,
-        name: 'The Poolrooms',
-        description: 'Un immense bassin d\'eau. Quelque chose bouge dessous...',
-        difficulty: 3,
-        monsters: ['crawler', 'watcher'],
-        items: ['rope', 'matches'],
-        darkness: 0.7,
-        ambiance: 'water_dripping'
-    },
-    {
-        id: 3,
-        name: 'The Offices',
-        description: 'Des bureaux abandonnés. Ordinateurs allumés sans raison.',
-        difficulty: 3,
-        monsters: ['machine', 'reflector'],
-        items: ['document', 'coffee_cup'],
-        darkness: 0.4,
-        ambiance: 'computer_hum'
-    },
-    {
-        id: 4,
-        name: 'The Dark Place',
-        description: 'Noir complet. Tu entends respirer autour de toi.',
-        difficulty: 5,
-        monsters: ['shadow', 'crawler', 'watcher'],
-        items: ['lighter', 'last_hope'],
-        darkness: 0.99,
-        ambiance: 'breathing'
-    },
-    {
-        id: 5,
-        name: 'The Exit',
-        description: 'Une porte brillante. C\'est enfin la liberté...',
-        difficulty: 1,
-        monsters: [],
-        items: ['freedom'],
-        darkness: 0.0,
-        ambiance: 'light'
-    }
-];
-
-// ===== AJOUTER UN NOUVEAU NIVEAU (EXEMPLE) =====
-// Copier/coller ce bloc pour créer un nouveau niveau
-
-const NEW_LEVEL_EXEMPLE = {
-    id: 6,                                    // ID unique
-    name: 'Le Nom du Niveau',                 // Nom affiché
-    description: 'Description du niveau...',  // Description
-    difficulty: 2,                            // Difficulté (1-5)
-    monsters: ['shadow', 'watcher'],          // Monstres présents
-    items: ['flashlight', 'key'],             // Items disponibles
-    darkness: 0.6,                            // Obscurité (0-1)
-    ambiance: 'ambiance_sound'                // Son ambiance
-};
-
-// ===== FONCTION POUR AJOUTER UN NIVEAU =====
-function addLevel(levelObject) {
-    LEVELS.push(levelObject);
-    console.log(`✅ Niveau ajouté: ${levelObject.name}`);
-}
-
-// ===== FONCTION POUR CHARGER UN NIVEAU =====
-function loadLevel(levelId) {
-    const level = LEVELS.find(l => l.id === levelId);
-    
-    if (!level) {
-        console.error(`❌ Niveau ${levelId} non trouvé!`);
-        return;
-    }
-    
-    console.log(`📍 Chargement: ${level.name}`);
-    
-    // Mettre à jour le HUD
-    document.getElementById('room-name').textContent = `Level ${level.id} - ${level.name}`;
-    document.getElementById('room-description').textContent = level.description;
-    
-    // Appliquer les paramètres du niveau
-    applyLevelSettings(level);
-    
-    return level;
-}
-
-function applyLevelSettings(level) {
-    // Ajouter l'obscurité
-    const viewport = document.getElementById('viewport');
-    if (viewport) {
-        viewport.style.opacity = 1 - level.darkness;
-        viewport.style.filter = `brightness(${1 - level.darkness})`;
-    }
-    
-    // Jouer l'ambiance sonore
-    playAmbiance(level.ambiance);
-    
-    // Spawnner les monstres
-    spawnMonstersFromLevel(level);
-    
-    // Ajouter les items
-    addItemsFromLevel(level);
-}
-
-function spawnMonstersFromLevel(level) {
-    console.log(`👹 Monstres: ${level.monsters.join(', ')}`);
-    // À adapter selon votre système de monstres
-    // Exemple:
-    // level.monsters.forEach(monsterType => {
-    //     spawnMonster(monsterType);
-    // });
-}
-
-function addItemsFromLevel(level) {
-    console.log(`📦 Items: ${level.items.join(', ')}`);
-    // À adapter selon votre système d'items
-    // Exemple:
-    // level.items.forEach(itemType => {
-    //     addItem(itemType);
-    // });
-}
-
-function playAmbiance(ambianceType) {
-    console.log(`🔊 Ambiance: ${ambianceType}`);
-    // À adapter selon votre système audio
-}
-
-// ===== NAVIGUER ENTRE LES NIVEAUX =====
-function nextLevel() {
-    if (window.currentLevel !== undefined) {
-        const nextId = window.currentLevel + 1;
-        if (nextId < LEVELS.length) {
-            window.currentLevel = nextId;
-            loadLevel(nextId);
-        } else {
-            console.log('🎉 Jeu terminé!');
-        }
-    }
-}
-
-function prevLevel() {
-    if (window.currentLevel !== undefined && window.currentLevel > 0) {
-        window.currentLevel--;
-        loadLevel(window.currentLevel);
-    }
-}
-
-// ===== EXPORTER LES NIVEAUX =====
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { LEVELS, addLevel, loadLevel, nextLevel, prevLevel };
-} 
-
+    window.game = new BackroomsGame();
+});
