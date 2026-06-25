@@ -513,10 +513,12 @@
         </div>
     </div>
 
-    <!-- Socket.io Client (MULTIJOUEUR) -->
+    <!-- ✅ SCRIPTS MULTIJOUEUR -->
+    
+    <!-- Socket.io Client -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     
-    <!-- Système Multijoueur (copier le client-multiplayer.js ici ou faire un fichier séparé) -->
+    <!-- Système Multijoueur -->
     <script src="client-multiplayer.js"></script>
 
     <!-- Votre jeu existant -->
@@ -536,9 +538,8 @@
                 return;
             }
 
-            // URL du serveur (À CHANGER selon votre déploiement)
-            // En local: 'http://localhost:3000'
-            // Sur Replit: 'https://backrooms-multiplayer.replit.dev'
+            // 🔴 À CHANGER : Mettez votre URL Replit ici
+            // Example: https://backrooms-multiplayer.replit.dev
             const serverURL = 'https://backrooms-multiplayer.replit.dev';
 
             isMultiplayerMode = true;
@@ -636,7 +637,7 @@
             if (!multiplayer || !isMultiplayerMode) return;
 
             // À adapter selon votre système de jeu
-            // Exemple simple :
+            // Actuellement : position aléatoire (exemple)
             const position = {
                 x: Math.random() * 100,
                 y: Math.random() * 100,
@@ -655,4 +656,4 @@
         }, 1000);
     </script>
 </body>
-</html> 
+</html>
