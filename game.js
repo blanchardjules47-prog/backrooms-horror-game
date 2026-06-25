@@ -1038,4 +1038,176 @@ class Game {
 
 window.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
-});
+});// ===== SYSTÈME DE NIVEAUX COMPLET =====
+// Ajouter ce code dans votre game.js
+
+const LEVELS = [
+    {
+        id: 0,
+        name: 'The Lobby',
+        description: 'L\'entrée des Backrooms. Fluorescent lights et murs jaunes.',
+        difficulty: 1,
+        monsters: ['shadow'],
+        items: ['flashlight', 'can_of_beans'],
+        darkness: 0.2,
+        ambiance: 'buzzing'
+    },
+    {
+        id: 1,
+        name: 'The Hallways',
+        description: 'Des couloirs infinis. Les murs vous observent.',
+        difficulty: 2,
+        monsters: ['shadow', 'watcher'],
+        items: ['water_bottle', 'key'],
+        darkness: 0.5,
+        ambiance: 'whispers'
+    },
+    {
+        id: 2,
+        name: 'The Poolrooms',
+        description: 'Un immense bassin d\'eau. Quelque chose bouge dessous...',
+        difficulty: 3,
+        monsters: ['crawler', 'watcher'],
+        items: ['rope', 'matches'],
+        darkness: 0.7,
+        ambiance: 'water_dripping'
+    },
+    {
+        id: 3,
+        name: 'The Offices',
+        description: 'Des bureaux abandonnés. Ordinateurs allumés sans raison.',
+        difficulty: 3,
+        monsters: ['machine', 'reflector'],
+        items: ['document', 'coffee_cup'],
+        darkness: 0.4,
+        ambiance: 'computer_hum'
+    },
+    {
+        id: 4,
+        name: 'The Dark Place',
+        description: 'Noir complet. Tu entends respirer autour de toi.',
+        difficulty: 5,
+        monsters: ['shadow', 'crawler', 'watcher'],
+        items: ['lighter', 'last_hope'],
+        darkness: 0.99,
+        ambiance: 'breathing'
+    },
+    {
+        id: 5,
+        name: 'The Exit',
+        description: 'Une porte brillante. C\'est enfin la liberté...',
+        difficulty: 1,
+        monsters: [],
+        items: ['freedom'],
+        darkness: 0.0,
+        ambiance: 'light'
+    }
+];
+
+// ===== AJOUTER UN NOUVEAU NIVEAU (EXEMPLE) =====
+// Copier/coller ce bloc pour créer un nouveau niveau
+
+const NEW_LEVEL_EXEMPLE = {
+    id: 6,                                    // ID unique
+    name: 'Le Nom du Niveau',                 // Nom affiché
+    description: 'Description du niveau...',  // Description
+    difficulty: 2,                            // Difficulté (1-5)
+    monsters: ['shadow', 'watcher'],          // Monstres présents
+    items: ['flashlight', 'key'],             // Items disponibles
+    darkness: 0.6,                            // Obscurité (0-1)
+    ambiance: 'ambiance_sound'                // Son ambiance
+};
+
+// ===== FONCTION POUR AJOUTER UN NIVEAU =====
+function addLevel(levelObject) {
+    LEVELS.push(levelObject);
+    console.log(`✅ Niveau ajouté: ${levelObject.name}`);
+}
+
+// ===== FONCTION POUR CHARGER UN NIVEAU =====
+function loadLevel(levelId) {
+    const level = LEVELS.find(l => l.id === levelId);
+    
+    if (!level) {
+        console.error(`❌ Niveau ${levelId} non trouvé!`);
+        return;
+    }
+    
+    console.log(`📍 Chargement: ${level.name}`);
+    
+    // Mettre à jour le HUD
+    document.getElementById('room-name').textContent = `Level ${level.id} - ${level.name}`;
+    document.getElementById('room-description').textContent = level.description;
+    
+    // Appliquer les paramètres du niveau
+    applyLevelSettings(level);
+    
+    return level;
+}
+
+function applyLevelSettings(level) {
+    // Ajouter l'obscurité
+    const viewport = document.getElementById('viewport');
+    if (viewport) {
+        viewport.style.opacity = 1 - level.darkness;
+        viewport.style.filter = `brightness(${1 - level.darkness})`;
+    }
+    
+    // Jouer l'ambiance sonore
+    playAmbiance(level.ambiance);
+    
+    // Spawnner les monstres
+    spawnMonstersFromLevel(level);
+    
+    // Ajouter les items
+    addItemsFromLevel(level);
+}
+
+function spawnMonstersFromLevel(level) {
+    console.log(`👹 Monstres: ${level.monsters.join(', ')}`);
+    // À adapter selon votre système de monstres
+    // Exemple:
+    // level.monsters.forEach(monsterType => {
+    //     spawnMonster(monsterType);
+    // });
+}
+
+function addItemsFromLevel(level) {
+    console.log(`📦 Items: ${level.items.join(', ')}`);
+    // À adapter selon votre système d'items
+    // Exemple:
+    // level.items.forEach(itemType => {
+    //     addItem(itemType);
+    // });
+}
+
+function playAmbiance(ambianceType) {
+    console.log(`🔊 Ambiance: ${ambianceType}`);
+    // À adapter selon votre système audio
+}
+
+// ===== NAVIGUER ENTRE LES NIVEAUX =====
+function nextLevel() {
+    if (window.currentLevel !== undefined) {
+        const nextId = window.currentLevel + 1;
+        if (nextId < LEVELS.length) {
+            window.currentLevel = nextId;
+            loadLevel(nextId);
+        } else {
+            console.log('🎉 Jeu terminé!');
+        }
+    }
+}
+
+function prevLevel() {
+    if (window.currentLevel !== undefined && window.currentLevel > 0) {
+        window.currentLevel--;
+        loadLevel(window.currentLevel);
+    }
+}
+
+// ===== EXPORTER LES NIVEAUX =====
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { LEVELS, addLevel, loadLevel, nextLevel, prevLevel };
+} 
+
